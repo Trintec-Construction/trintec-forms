@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trintec Document Generator</title>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;min-height:100vh;color:#1a1a2e}
+.topbar{background:#fff;color:#1a3a5c;padding:0 1.25rem;height:62px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.1);border-bottom:2px solid #1a3a5c;position:sticky;top:0;z-index:100}
+.topbar img{height:44px;width:auto;object-fit:contain;flex-shrink:0;max-width:100px}
+.topbar-title{font-size:15px;font-weight:700;color:#1a3a5c;white-space:nowrap}
+.topbar-sub{font-size:10px;color:#6b7280;margin-top:1px;white-space:nowrap}
+.container{max-width:820px;margin:0 auto;padding:1.5rem 1rem}
+.tabs{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;padding:10px 6px;border:1.5px solid #d0d7e3;background:white;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;color:#555;transition:all .18s;white-space:nowrap;text-align:center}
+.tab.active{background:#1a3a5c;color:white;border-color:#1a3a5c}
+.tab:hover:not(.active){border-color:#1a3a5c;color:#1a3a5c}
+.panel{display:none}.panel.active{display:block}
+.card{background:white;border-radius:12px;padding:1rem 1.25rem;margin-bottom:.875rem;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #eaecf0}
+.card-title{font-size:10px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.row.one{grid-template-columns:1fr}
+.row.three{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:500;color:#6b7280}
+.field input,.field textarea,.field select{padding:8px 10px;border:1px solid #dde1ea;border-radius:8px;font-size:14px;color:#1a1a2e;background:#fafbfc;font-family:inherit;transition:border-color .15s,box-shadow .15s;width:100%}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:#1a3a5c;box-shadow:0 0 0 3px rgba(26,58,92,.1);background:white}
+.field textarea{resize:vertical;min-height:74px;line-height:1.5}
+.checkgroup{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:4px}
+.checkgroup label{display:flex;align-items:center;gap:6px;font-size:13px;color:#374151;cursor:pointer;font-weight:400}
+.checkgroup input[type=checkbox]{width:15px;height:15px;accent-color:#1a3a5c;cursor:pointer}
+.li-header{display:grid;gap:6px;font-size:10px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding:0 2px}
+.li-row{display:grid;gap:6px;margin-bottom:6px;align-items:center}
+.li-row input{padding:7px 8px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;color:#1a1a2e;background:#fafbfc;font-family:inherit;width:100%}
+.li-row input:focus{outline:none;border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.1)}
+.li-tot{font-size:13px;color:#6b7280;padding:7px 8px;background:#f5f6fa;border-radius:8px;text-align:right;white-space:nowrap;border:1px solid #eaecf0}
+.rm-btn{width:30px;height:30px;border:1px solid #f0d0d0;background:#fff5f5;cursor:pointer;color:#e53e3e;font-size:13px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all .15s;flex-shrink:0}
+.rm-btn:hover{background:#fee2e2;border-color:#e53e3e}
+.add-line-btn{font-size:13px;color:#1a3a5c;background:none;border:1.5px dashed #a0b4cc;border-radius:8px;padding:7px 14px;cursor:pointer;margin-top:4px;transition:all .15s;font-weight:500;width:100%}
+.add-line-btn:hover{background:#f0f4f8;border-color:#1a3a5c}
+.total-row{display:flex;justify-content:flex-end;align-items:baseline;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #eaecf0}
+.total-label{font-size:12px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.5px}
+.total-amount{font-size:22px;font-weight:700;color:#1a3a5c}
+.gen-btn{width:100%;padding:13px;background:#1a3a5c;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px;transition:background .18s}
+.gen-btn:hover{background:#0f2540}
+.gen-btn:disabled{opacity:.55;cursor:not-allowed}
+.status-msg{font-size:13px;text-align:center;margin-top:8px;min-height:20px;font-weight:500}
+.ok{color:#059669}.err{color:#dc2626}
+footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
+
+/* ── Responsive breakpoints ───────────────────────────── */
+@media(max-width:640px){
+  .topbar{padding:0 .75rem;gap:8px;height:54px}
+  .topbar img{height:36px}
+  .topbar-title{font-size:13px;line-height:1.2}
+  .topbar-sub{display:none}
+  .container{padding:.875rem .75rem}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tab{min-width:0;font-size:12px;padding:10px 6px;flex:none;white-space:normal;line-height:1.2}
+  .row{grid-template-columns:1fr}
+  .row.three{grid-template-columns:1fr}
+  .card{padding:.875rem .875rem}
+  .field input,.field textarea,.field select{font-size:16px}
+  .li-header{display:none}
+  .li-row{gap:5px}
+  .total-amount{font-size:20px}
+  .gen-btn{font-size:15px;padding:14px}
+  .checkgroup{gap:8px 12px}
+  .checkgroup label{font-size:14px}
+  .add-line-btn{font-size:14px;padding:10px}
+  footer{padding:1rem;font-size:11px}
+}
+@media(min-width:641px) and (max-width:900px){
+  .container{padding:1.25rem 1rem}
+  .tabs{gap:6px}
+  .tab{min-width:0;font-size:12px;flex:1}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="data:image/jpeg;base64,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" alt="Trintec">
+  <div>
+    <div class="topbar-title">Trintec Document Generator</div>
+    <div class="topbar-sub">Proposals · Estimates · Lien · Transmittal</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('proposal')">📄 Proposal</button>
+    <button class="tab" onclick="switchTab('estimate')">🧾 Estimate</button>
+    <button class="tab" onclick="switchTab('rol')">🔓 Release of Lien</button>
+    <button class="tab" onclick="switchTab('transmittal')">📬 Transmittal</button>
+  </div>
+
+  <!-- ═══════════════ PROPOSAL PANEL ═══════════════ -->
+  <div class="panel active" id="panel-proposal">
+    <div class="card">
+      <div class="card-title">Document Info</div>
+      <div class="row">
+        <div class="field"><label>Project Name</label><input id="p_proj_name" placeholder=""/></div>
+        <div class="field"><label>Project Address</label><input id="p_proj_addr" placeholder=""/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" id="p_date"/></div>
+        <div class="field"><label>Proposal No.</label><input id="p_num" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Client</div>
+      <div class="row one"><div class="field"><label>Name / Attn</label><input id="p_cn" placeholder=""/></div></div>
+      <div class="row">
+        <div class="field"><label>Company</label><input id="p_cc" placeholder=""/></div>
+        <div class="field"><label>Address</label><input id="p_ca" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Reference (Re:)</div>
+      <div class="row one"><div class="field"><input id="p_re" placeholder=""/></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scope of Work</div>
+      <div class="row one"><div class="field"><label>Introductory paragraph</label><textarea id="p_intro" placeholder=""></textarea></div></div>
+      <div class="row one"><div class="field"><label>Work included</label><textarea id="p_inc" placeholder=""></textarea></div></div>
+      <div class="row one"><div class="field"><label>Exclusions</label><textarea id="p_exc" placeholder=""></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Line Items</div>
+      <div class="li-header" id="p_li_hdr" style="grid-template-columns:1fr 120px 40px"><span>Description</span><span>Amount</span><span></span></div>
+      <div id="p_li_wrap"></div>
+      <button class="add-line-btn" onclick="addLine('p')">+ Add line</button>
+      <div class="total-row"><span class="total-label">Total</span><span class="total-amount" id="p_tot">$0.00</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Payment Terms &amp; Deposit</div>
+      <div class="checkgroup" style="gap:10px 24px;margin-bottom:14px">
+        <label><input type="checkbox" id="p_dep_30" onchange="buildPayTerms()"> 30% Deposit</label>
+        <label><input type="checkbox" id="p_dep_50" onchange="buildPayTerms()"> 50% Deposit</label>
+        <label><input type="checkbox" id="p_dep_progress" onchange="buildPayTerms()"> Progress Payments</label>
+        <label><input type="checkbox" id="p_dep_final30" onchange="buildPayTerms()"> Final due 30 days after completion</label>
+        <label><input type="checkbox" id="p_dep_final" onchange="buildPayTerms()"> Final due upon completion</label>
+      </div>
+      <div class="row one"><div class="field"><label style="font-size:12px;color:#6b7280">Custom / Edit terms (or leave blank)</label><textarea id="p_pay" style="min-height:58px" placeholder=""></textarea></div></div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('proposal')"><span id="p_btn_txt">⬇ Generate Proposal PDF</span></button>
+    <div class="status-msg" id="p_status"></div>
+  </div>
+
+  <!-- ═══════════════ ESTIMATE PANEL ═══════════════ -->
+  <div class="panel" id="panel-estimate">
+    <div class="card">
+      <div class="card-title">Document Info</div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" id="e_date"/></div>
+        <div class="field"><label>Estimate No.</label><input id="e_num" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Client</div>
+      <div class="row one"><div class="field"><label>Name / Attn</label><input id="e_cn" placeholder=""/></div></div>
+      <div class="row">
+        <div class="field"><label>Company</label><input id="e_cc" placeholder=""/></div>
+        <div class="field"><label>Address</label><input id="e_ca" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scope of Work</div>
+      <div class="row one"><div class="field"><textarea id="e_scope" placeholder=""></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Line Items</div>
+      <div class="li-header" id="e_li_hdr" style="grid-template-columns:65px 1fr 110px 110px 40px"><span>QTY</span><span>Description</span><span>Unit Price</span><span>Line Total</span><span></span></div>
+      <div id="e_li_wrap"></div>
+      <button class="add-line-btn" onclick="addLine('e')">+ Add line</button>
+      <div class="total-row"><span class="total-label">Total</span><span class="total-amount" id="e_tot">$0.00</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Payment Terms</div>
+      <div class="row one"><div class="field"><textarea id="e_pay" style="min-height:58px" placeholder=""></textarea></div></div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('estimate')"><span id="e_btn_txt">⬇ Generate Estimate PDF</span></button>
+    <div class="status-msg" id="e_status"></div>
+  </div>
+
+  <!-- ═══════════════ RELEASE OF LIEN PANEL ═══════════════ -->
+  <div class="panel" id="panel-rol">
+    <div class="card">
+      <div class="card-title">Project Information</div>
+      <div class="row">
+        <div class="field"><label>Project</label><input id="r_project" placeholder=""/></div>
+        <div class="field"><label>Owner</label><input id="r_owner" placeholder=""/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Property Address</label><input id="r_property" placeholder=""/></div>
+        <div class="field"><label>Document Date</label><input type="date" id="r_date"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Release Type</div>
+      <div class="checkgroup" style="gap:20px">
+        <label style="font-size:14px;font-weight:600"><input type="radio" name="r_type" value="Final" style="width:16px;height:16px;accent-color:#1a3a5c;margin-right:6px"> Final Release of Lien</label>
+        <label style="font-size:14px;font-weight:600"><input type="radio" name="r_type" value="Partial" checked style="width:16px;height:16px;accent-color:#1a3a5c;margin-right:6px"> Partial Release of Lien (Upon Progress Payment)</label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Payment Details</div>
+      <div class="row one">
+        <div class="field"><label>Amount ($)</label><input id="r_amount_num" placeholder="" oninput="amountToWords(this.value)"/></div>
+        <div class="field" style="display:none"><label>Amount in words (auto)</label><input id="r_amount_words" placeholder="Auto-filled" readonly style="background:#f0f4f8;color:#1a3a5c;font-weight:500"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Paid by</label><input id="r_paid_by" placeholder=""/></div>
+        <div class="field"><label>Services through date</label><input type="date" id="r_through"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Signature</div>
+      <div class="row one">
+        <input type="hidden" id="r_sign_date"/><input type="hidden" id="r_dated_text"/>
+      </div>
+      <div class="row one">
+        <div class="field"><label>Company (By)</label><input id="r_signer_company" placeholder=""/></div>
+      </div>
+      <input type="hidden" id="r_county" value=""/>
+      <div class="row">
+        <div class="field"><label>Signer's Name</label><input id="r_signer_name" placeholder=""/></div>
+        <div class="field"><label>Title</label><input id="r_signer_title" placeholder=""/></div>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('rol')"><span id="r_btn_txt">⬇ Generate Release of Lien PDF</span></button>
+    <div class="status-msg" id="r_status"></div>
+  </div>
+
+  <!-- ═══════════════ TRANSMITTAL PANEL ═══════════════ -->
+  <div class="panel" id="panel-transmittal">
+    <div class="card">
+      <div class="card-title">Header</div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" id="t_date"/></div>
+        <div class="field"><label>Job No.</label><input id="t_job_no" placeholder=""/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Project / Job</label><input id="t_project" placeholder=""/></div>
+        <div class="field"><label>Attn</label><input id="t_attn" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">TO</div>
+      <div class="row one"><div class="field"><label>Name</label><input id="t_to_name" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Address</label><textarea id="t_to_addr" style="min-height:58px" placeholder=""/></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">We Are Sending You</div>
+      <div class="checkgroup" id="t_sending_checks">
+        <label><input type="checkbox" value="Attached"> Attached</label>
+        <label><input type="checkbox" value="Under Separate Cover Via"> Under Separate Cover Via</label>
+      </div>
+      <div class="card-title" style="margin-top:14px">The Following</div>
+      <div class="checkgroup" id="t_following_checks">
+        <label><input type="checkbox" value="Shop Drawings"> Shop Drawings</label>
+        <label><input type="checkbox" value="Prints"> Prints</label>
+        <label><input type="checkbox" value="Plans"> Plans</label>
+        <label><input type="checkbox" value="Samples"> Samples</label>
+        <label><input type="checkbox" value="Copy of Letter"> Copy of Letter</label>
+        <label><input type="checkbox" value="Change Order"> Change Order</label>
+        <label><input type="checkbox" value="Specs"> Specs</label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Items Transmitted</div>
+      <div class="li-header" style="grid-template-columns:90px 60px 1fr 36px"><span>Date</span><span>No.</span><span>Description</span><span></span></div>
+      <div id="t_li_wrap"></div>
+      <button class="add-line-btn" onclick="addTLine()">+ Add line</button>
+    </div>
+    <div class="card">
+      <div class="card-title">These Are Transmitted</div>
+      <div class="checkgroup" id="t_transmitted_checks">
+        <label><input type="checkbox" value="For approval"> For approval</label>
+        <label><input type="checkbox" value="For your use"> For your use</label>
+        <label><input type="checkbox" value="As requested"> As requested</label>
+        <label><input type="checkbox" value="For review/comment"> For review/comment</label>
+        <label><input type="checkbox" value="Approved as submitted"> Approved as submitted</label>
+        <label><input type="checkbox" value="Approved as noted"> Approved as noted</label>
+        <label><input type="checkbox" value="Returned for corrections"> Returned for corrections</label>
+        <label><input type="checkbox" value="Resubmit"> Resubmit</label>
+        <label><input type="checkbox" value="Submit"> Submit</label>
+        <label><input type="checkbox" value="Return"> Return</label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="field"><label>Copies for approval</label><input id="t_copies_approval" placeholder=""/></div>
+        <div class="field"><label>Copies for distribution</label><input id="t_copies_dist" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Remarks</div>
+      <div class="row one"><div class="field"><textarea id="t_remarks" style="min-height:70px" placeholder=""></textarea></div></div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><label>Signed by</label><input id="t_signed" placeholder=""/></div>
+        <div class="field"><label>Copy to</label><input id="t_copy" placeholder=""/></div>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('transmittal')"><span id="t_btn_txt">⬇ Generate Transmittal Letter PDF</span></button>
+    <div class="status-msg" id="t_status"></div>
+  </div>
+</div>
+
+<footer>Trintec Construction Inc. · Document Generator</footer>
+
+<script>
+const LOGO_B64 = "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";
+const pLines = [], eLines = [];
+let tLines = [];
+
+// ── Tab switching ──────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    const ids = ['proposal','estimate','rol','transmittal'];
+    b.classList.toggle('active', ids[i]===t);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+// ── Line items helpers ─────────────────────────────────────
+function fmt(n){return(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function g(id){return(document.getElementById(id)||{}).value||'';}
+
+function addLine(prefix) {
+  const arr = prefix==='p' ? pLines : eLines;
+  arr.push({qty:'',desc:'',unit:'',total:0,manualTotal:''});
+  renderLines(prefix);
+}
+
+function removeLine(prefix, i) {
+  const arr = prefix==='p' ? pLines : eLines;
+  arr.splice(i,1); renderLines(prefix);
+}
+
+function updateLine(prefix, i, f, v) {
+  const arr = prefix==='p' ? pLines : eLines;
+  arr[i][f]=v;
+  if(prefix==='e' && f==='manualTotal') {
+    arr[i].manualTotal = v;
+  } else if(f==='qty'||f==='unit') {
+    arr[i].total=(parseFloat(arr[i].qty)||0)*(parseFloat(arr[i].unit)||0);
+    // clear manualTotal if qty or unit is set
+    if(arr[i].qty||arr[i].unit) arr[i].manualTotal='';
+  }
+  // effective total for sum: if qty blank and manualTotal set, use manualTotal
+  const effTotal = (item) => {
+    if(item.manualTotal!==undefined && item.manualTotal!=='' && !item.qty) return parseFloat(item.manualTotal)||0;
+    return item.total||0;
+  };
+  const tot = arr.reduce((s,l)=>s+effTotal(l),0);
+  document.getElementById(prefix+'_tot').textContent='$'+fmt(tot);
+  // update display
+  if(prefix==='e') {
+    const el=document.querySelector('#'+prefix+'_li_row_'+i+' .li-tot-input');
+    if(el && !arr[i].qty) { el.readOnly=false; el.style.background=''; el.style.color=''; }
+    else if(el) { el.readOnly=true; el.style.background='var(--li-tot-bg,#f5f6fa)'; el.style.color='#6b7280'; el.value='$'+fmt(arr[i].total); }
+  } else {
+    const el=document.querySelector('#'+prefix+'_li_row_'+i+' .li-tot');
+    if(el) el.textContent='$'+fmt(arr[i].total);
+  }
+}
+
+function renderLines(prefix) {
+  const arr = prefix==='p' ? pLines : eLines;
+  const c = document.getElementById(prefix+'_li_wrap');
+  c.innerHTML='';
+  arr.forEach((item,i) => {
+    const row=document.createElement('div');
+    row.className='li-row'; row.id=prefix+'_li_row_'+i;
+    if(prefix==='e'){
+      row.style.gridTemplateColumns='65px 1fr 110px 110px 40px';
+      const hasQty = !!(item.qty);
+      const totVal = (!hasQty && item.manualTotal!==undefined && item.manualTotal!=='') ? item.manualTotal : (hasQty ? '$'+fmt(item.total) : '');
+      const totReadonly = hasQty ? 'readonly' : '';
+      const totBg = hasQty ? 'background:#f5f6fa;color:#6b7280;' : 'background:white;color:#1a1a2e;';
+      row.innerHTML=`<input placeholder="" value="${item.qty}" oninput="updateLine('e',${i},'qty',this.value)"/>
+        <input placeholder="" value="${item.desc}" oninput="updateLine('e',${i},'desc',this.value)"/>
+        <input placeholder="0.00" value="${item.unit}" oninput="updateLine('e',${i},'unit',this.value)"/>
+        <input class="li-tot-input" placeholder="0.00" value="${totVal}" ${totReadonly} style="${totBg}padding:8px 10px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;text-align:right;font-family:inherit;width:100%" oninput="updateLine('e',${i},'manualTotal',this.value.replace('$',''))"/>
+        <button class="rm-btn" onclick="removeLine('e',${i})">✕</button>`;
+    } else {
+      row.style.gridTemplateColumns='1fr 120px 40px';
+      row.innerHTML=`<input placeholder="" value="${item.desc}" oninput="updateLine('p',${i},'desc',this.value)"/>
+        <input placeholder="0.00" value="${item.unit}" oninput="updateLine('p',${i},'unit',this.value);pLines[${i}].qty='1';updateLine('p',${i},'qty','1')"/>
+        <button class="rm-btn" onclick="removeLine('p',${i})">✕</button>`;
+    }
+    c.appendChild(row);
+  });
+}
+
+// Transmittal lines
+function addTLine() {
+  tLines.push({date:'',no:'',desc:''});
+  renderTLines();
+}
+function removeTLine(i){ tLines.splice(i,1); renderTLines(); }
+function updateTLine(i,f,v){ tLines[i][f]=v; }
+function renderTLines(){
+  const c=document.getElementById('t_li_wrap'); c.innerHTML='';
+  tLines.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='li-row'; row.style.gridTemplateColumns='90px 60px 1fr 36px';
+    row.innerHTML=`<input placeholder="" value="${item.date}" oninput="updateTLine(${i},'date',this.value)"/>
+      <input placeholder="" value="${item.no}" oninput="updateTLine(${i},'no',this.value)"/>
+      <input placeholder="" value="${item.desc}" oninput="updateTLine(${i},'desc',this.value)"/>
+      <button class="rm-btn" onclick="removeTLine(${i})">✕</button>`;
+    c.appendChild(row);
+  });
+}
+
+// ── PDF helpers ───────────────────────────────────────────
+function logoImg(doc){ return "data:image/jpeg;base64,"+LOGO_B64; }
+
+function pdfHeader(doc, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr){
+  doc.addImage(logoImg(doc),"JPEG",margin,22,64,62);
+  let cx = margin+72;
+  doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(...blue);
+  doc.text("TRINTEC CONSTRUCTION INC",cx,42);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...gray);
+  doc.text("7865 NW 66th Street, Miami, FL 33166",cx,54);
+  doc.setTextColor(...blue);
+  doc.textWithLink("305.685.3001",cx,66,{url:"tel:+13056853001"});
+  doc.setTextColor(...gray); doc.text("     ·   fax 305.401.3010",cx+46,66);
+  doc.setTextColor(...blue);
+  doc.textWithLink("pschvartz@trintecinc.com",cx,78,{url:"mailto:pschvartz@trintecinc.com"});
+  const rx=W-margin;
+  doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...blue);
+  doc.text(docLabel,rx,42,{align:"right"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...gray);
+  if(docNum) doc.text("No. "+docNum,rx,54,{align:"right"});
+  doc.text("Date: "+dateStr,rx,66,{align:"right"});
+  doc.setDrawColor(...blue); doc.setLineWidth(2);
+  doc.line(margin,96,W-margin,96);
+}
+
+function pdfFooter(doc, W, margin, blue, lightgray){
+  const totalPages = doc.internal.getNumberOfPages();
+  for(let p=1; p<=totalPages; p++){
+    doc.setPage(p);
+    const pageH=doc.internal.pageSize.getHeight();
+    doc.setDrawColor(...blue); doc.setLineWidth(1.5);
+    doc.line(margin,pageH-28,W-margin,pageH-28);
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...lightgray);
+    doc.text("Trintec Construction Inc.  ·  7865 NW 66th Street, Miami, FL 33166  ·  305.685.3001  ·  pschvartz@trintecinc.com",W/2,pageH-16,{align:"center"});
+    if(totalPages>1){
+      doc.text("Page "+p+" of "+totalPages, W-margin, pageH-16, {align:"right"});
+    }
+  }
+}
+
+// ── Pagination helpers ───────────────────────────────────
+const FOOTER_RESERVE = 55; // pts reserved for footer
+
+function checkPage(doc, y, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr, needed){
+  needed = needed || 20;
+  const pageH = doc.internal.pageSize.getHeight();
+  if(y + needed > pageH - FOOTER_RESERVE){
+    doc.addPage("letter");
+    pdfHeader(doc, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr);
+    return 116;
+  }
+  return y;
+}
+
+// Write lines of text with automatic page breaks
+function writeLines(doc, lines, x, y, lineH, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr){
+  for(let i=0; i<lines.length; i++){
+    y = checkPage(doc, y, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr, lineH);
+    doc.text(lines[i], x, y);
+    y += lineH;
+  }
+  return y;
+}
+
+// Write a block: set font/size/color then write with page breaks
+function writeBlock(doc, text, fontSize, bold, color, x, lw, y, lineH, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr){
+  doc.setFont("helvetica", bold?"bold":"normal");
+  doc.setFontSize(fontSize);
+  doc.setTextColor(...color);
+  const lines = doc.splitTextToSize(text, lw);
+  return writeLines(doc, lines, x, y, lineH, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr);
+}
+
+// Draw a horizontal rule, paginating if needed
+function drawRule(doc, y, W, margin, color, lw, blue, gray, lightgray, docLabel, docNum, dateStr){
+  y = checkPage(doc, y, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr, 10);
+  doc.setDrawColor(...color); doc.setLineWidth(lw);
+  doc.line(margin, y, W-margin, y);
+  return y;
+}
+
+// autoTable wrapper that adds header on new pages
+function pagedTable(doc, opts, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr){
+  doc.autoTable({
+    ...opts,
+    pageBreak: 'auto',
+    showHead: 'everyPage',
+    didDrawPage: function(data){
+      if(data.pageNumber > 1){
+        pdfHeader(doc, W, margin, blue, gray, lightgray, docLabel, docNum, dateStr);
+      }
+    },
+    margin: {left:margin, right:margin, top:116}
+  });
+  return doc.lastAutoTable.finalY;
+}
+
+// ── Main generator ────────────────────────────────────────
+async function genDoc(type) {
+  const btnId  = {proposal:'p_btn_txt',estimate:'e_btn_txt',rol:'r_btn_txt',transmittal:'t_btn_txt'}[type];
+  const statId = {proposal:'p_status',estimate:'e_status',rol:'r_status',transmittal:'t_status'}[type];
+  const btnEl  = document.getElementById(btnId);
+  const statEl = document.getElementById(statId);
+  btnEl.closest('button').disabled=true;
+  btnEl.textContent='Generating PDF...'; statEl.textContent=''; statEl.className='status-msg';
+
+  try {
+    if(typeof window.jspdf==='undefined') throw new Error('jsPDF library failed to load. Please check your internet connection.');
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"letter"});
+    const W=doc.internal.pageSize.getWidth(), margin=40;
+    const blue=[26,58,92], gray=[0,0,0], lightgray=[0,0,0];
+    let y=116, fn='';
+
+    // ── PROPOSAL ──
+    if(type==='proposal'){
+      const dateStr=g('p_date')?new Date(g('p_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      const totalAmt=pLines.reduce((s,l)=>s+(l.total||0),0);
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'PROPOSAL',g('p_num'),dateStr);
+      // Project + Client
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray);
+      doc.text("PROJECT",margin,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(30,30,30);
+      doc.text(g('p_proj_name')||'—',margin,y+13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
+      doc.text(g('p_proj_addr')||'',margin,y+25);
+      const cx2=W/2+20;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray);
+      doc.text("TO",cx2,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(30,30,30);
+      doc.text(g('p_cn')||'—',cx2,y+13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
+      if(g('p_ca')) doc.text(g('p_ca'),cx2,y+25);
+      if(g('p_cc')) doc.text(g('p_cc'),cx2,y+37);
+      y+=55;
+      if(g('p_re')){
+        doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray); doc.text("RE:",margin,y);
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(30,30,30);
+        const reL=doc.splitTextToSize(g('p_re'),W-margin*2-20); doc.text(reL,margin+22,y); y+=reL.length*12+10;
+      }
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.5); doc.line(margin,y,W-margin,y); y+=14;
+      // Contractor
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray); doc.text("CONTRACTOR",margin,y+2); y+=14;
+      doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(30,30,30); doc.text("Trintec Construction Inc.",margin,y); y+=12;
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...gray); doc.text("7865 NW 66th Street, Miami FL 33166",margin,y); y+=14;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.5); doc.line(margin,y,W-margin,y); y+=14;
+      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'PROPOSAL',g('p_num'),dateStr);
+      // Scope
+      const pArgs = [W,margin,blue,gray,lightgray,'PROPOSAL',g('p_num'),dateStr];
+      const scopeTxt=[g('p_intro'),g('p_inc')].filter(Boolean).join('\n\n');
+      if(scopeTxt){ y=writeBlock(doc,scopeTxt,9.5,false,[40,40,40],margin,W-margin*2,y,13,...pArgs); y+=10; }
+      if(g('p_exc')){
+        y=checkPage(doc,y,...pArgs,24);
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
+        doc.text("The work excludes:",margin,y); y+=13;
+        y=writeBlock(doc,g('p_exc'),9.5,false,[40,40,40],margin,W-margin*2,y,13,...pArgs); y+=10;
+      }
+      // Table
+      y+=6;
+      const tBody=pLines.length>0?pLines.map(l=>[l.desc,'$'+fmt(parseFloat(l.unit)||0)]):[];
+      while(tBody.length<5) tBody.push(['','']);
+      y = pagedTable(doc,{startY:y,head:[['DESCRIPTION','AMOUNT']],body:tBody,styles:{font:"helvetica",fontSize:9,cellPadding:7,textColor:[0,0,0],fillColor:[255,255,255]},headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},alternateRowStyles:{fillColor:[255,255,255]},columnStyles:{0:{cellWidth:'auto'},1:{cellWidth:100,halign:'right'}},tableLineColor:[200,210,220],tableLineWidth:0.3},W,margin,...pArgs.slice(2)); y+=14;
+      y=checkPage(doc,y,...pArgs,50);
+      doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(W-margin-160,y,W-margin,y); y+=14;
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...gray); doc.text("TOTAL",W-margin-160,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...blue); doc.text('$'+fmt(totalAmt),W-margin,y,{align:"right"}); y+=22;
+      y=drawRule(doc,y,W,margin,lightgray,0.4,...pArgs); y+=12;
+      const payTxt=g('p_pay')||'';
+      if(payTxt){ y=writeBlock(doc,payTxt,8.5,false,gray,margin,W-margin*2,y,12,...pArgs); y+=20; }
+      // Signatures
+      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'PROPOSAL',g('p_num'),dateStr,80);
+      const c1=margin,c2=W/2+20;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(c1,y+38,c1+180,y+38); doc.line(c2,y+38,c2+180,y+38);
+      doc.line(c1,y+62,c1+120,y+62); doc.line(c2,y+62,c2+120,y+62);
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray);
+      doc.text("ACCEPTED BY",c1,y+8); doc.text("CONTRACTOR — TRINTEC CONSTRUCTION INC.",c2,y+8);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...gray);
+      doc.text("Signature",c1,y+34); doc.text("Signature",c2,y+34);
+      doc.text("Date",c1,y+58); doc.text("Date",c2,y+58);
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='Proposal_'+(g('p_cc')||g('p_cn')||'Client').replace(/\s+/g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+    // ── ESTIMATE ──
+    else if(type==='estimate'){
+      const dateStr=g('e_date')?new Date(g('e_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      const totalAmt=eLines.reduce((s,l)=>{ const et=(!l.qty&&l.manualTotal!==undefined&&l.manualTotal!=='')?parseFloat(l.manualTotal)||0:l.total||0; return s+et; },0);
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'ESTIMATE',g('e_num'),dateStr);
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray); doc.text("TO",margin,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(30,30,30); doc.text(g('e_cn')||'—',margin,y+13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
+      if(g('e_ca')) doc.text(g('e_ca'),margin,y+25);
+      if(g('e_cc')) doc.text('Attn: '+g('e_cc'),margin,y+37);
+      y+=54;
+      const eArgs = [W,margin,blue,gray,lightgray,'ESTIMATE',g('e_num'),dateStr];
+      if(g('e_scope')){ y=writeBlock(doc,g('e_scope'),9.5,false,[40,40,40],margin,W-margin*2,y,13,...eArgs); y+=10; }
+      y+=6;
+      const effT = (l) => { if((!l.qty||l.qty==='') && l.manualTotal!==undefined && l.manualTotal!=='') return parseFloat(l.manualTotal)||0; return l.total||0; };
+      const tBody=eLines.length>0?eLines.map(l=>[l.qty,l.desc,l.unit?('$'+fmt(parseFloat(l.unit)||0)):'','$'+fmt(effT(l))]):[];
+      while(tBody.length<5) tBody.push(['','','','']);
+      y = pagedTable(doc,{startY:y,head:[['QTY','DESCRIPTION','UNIT PRICE','LINE TOTAL']],body:tBody,styles:{font:"helvetica",fontSize:9,cellPadding:7,textColor:[0,0,0],fillColor:[255,255,255]},headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},alternateRowStyles:{fillColor:[255,255,255]},columnStyles:{0:{cellWidth:45,halign:'center'},1:{cellWidth:'auto'},2:{cellWidth:80,halign:'right'},3:{cellWidth:80,halign:'right'}},tableLineColor:[200,210,220],tableLineWidth:0.3},W,margin,...eArgs.slice(2)); y+=14;
+      y=checkPage(doc,y,...eArgs,50);
+      doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(W-margin-160,y,W-margin,y); y+=14;
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...gray); doc.text("TOTAL",W-margin-160,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...blue); doc.text('$'+fmt(totalAmt),W-margin,y,{align:"right"}); y+=22;
+      if(g('e_pay')){ y=writeBlock(doc,g('e_pay'),8.5,false,gray,margin,W-margin*2,y,12,...eArgs); y+=14; }
+      // Thank you
+      y=checkPage(doc,y,...eArgs,40);
+      y+=10; doc.setDrawColor(...blue); doc.setLineWidth(1.5); doc.line(margin,y,W-margin,y); y+=16;
+      doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...blue); doc.text("THANK YOU FOR YOUR BUSINESS!",W/2,y,{align:"center"});
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='Estimate_'+(g('e_cc')||g('e_cn')||'Client').replace(/\s+/g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+    // ── RELEASE OF LIEN ──
+    else if(type==='rol'){
+      const dateStr=g('r_date')?new Date(g('r_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      const rolType = document.querySelector('input[name="r_type"]:checked')?.value || 'Partial';
+      const rolTitle = rolType==='Final' ? 'FINAL RELEASE OF LIEN' : 'RELEASE OF LIEN UPON PROGRESS PAYMENT';
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'RELEASE OF LIEN','',dateStr);
+      doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...blue);
+      doc.text(rolTitle,W/2,y,{align:"center"}); y+=22;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.5); doc.line(margin,y,W-margin,y); y+=16;
+      const lw=W-margin*2;
+      function rolLine(label, val, yy){
+        doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(26,58,92); doc.text(label,margin,yy);
+        doc.setFont("helvetica", val?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(val||'___________',margin+70,yy);
+        return yy+18;
+      }
+      y=rolLine("PROJECT:",g('r_project'),y);
+      y=rolLine("OWNER:",g('r_owner'),y); y+=4;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=14;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
+      const throughLong = g('r_through') ? new Date(g('r_through')+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '___________';
+      const amtWords = g('r_amount_words')||'___________';
+      const amtNum = g('r_amount_num')||'___';
+      const paidBy = g('r_paid_by')||'___________';
+      // Render body1 with amounts bold inline
+      function boldInline(doc, segments, x, y, lineH, maxW) {
+        // segments: [{text, bold}]
+        // Reflow into lines respecting maxW
+        let lines = [[]]; // array of arrays of segments
+        let lineW = 0;
+        segments.forEach(seg => {
+          doc.setFont("helvetica", seg.bold?"bold":"normal"); doc.setFontSize(9.5);
+          const words = seg.text.split(' ');
+          words.forEach((word, wi) => {
+            if(!word) return;
+            const w = doc.getTextWidth(word + ' ');
+            if(lineW + w > maxW && lineW > 0) { lines.push([]); lineW = 0; }
+            const last = lines[lines.length-1];
+            if(last.length && last[last.length-1].bold === seg.bold) {
+              last[last.length-1].text += (last[last.length-1].text.endsWith(' ')?'':' ') + word;
+            } else {
+              last.push({text: word, bold: seg.bold});
+            }
+            lineW += w;
+          });
+        });
+        let cy = y;
+        lines.forEach(line => {
+          let cx = x;
+          line.forEach(seg => {
+            doc.setFont("helvetica", seg.bold?"bold":"normal"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
+            doc.text(seg.text+' ', cx, cy);
+            cx += doc.getTextWidth(seg.text+' ');
+          });
+          cy += lineH;
+        });
+        return cy;
+      }
+      const body1segs = [
+        {text:'The undersigned lienor, in consideration of the sum of', bold:false},
+        {text:amtWords+' Dollars ($'+amtNum+')', bold:!!(g('r_amount_words')&&g('r_amount_num'))},
+        {text:'paid by', bold:false},
+        {text:paidBy, bold:!!g('r_paid_by')},
+        {text:'hereby waives and releases its lien and right to claim a lien for labor, services, or materials furnished through', bold:false},
+        {text:throughLong, bold:!!g('r_through')},
+        {text:', for the construction of improvements to the following described property owned by:', bold:false},
+      ];
+      y = boldInline(doc, body1segs, margin, y, 14, lw); y+=6;
+      y=rolLine("PROPERTY:",g('r_property'),y); y+=8;
+      const body2=`This waiver and release does not cover any retention or labor, services, or materials furnished after the date specified above.\n\nThis document waives and releases lien rights only to the extent of the payment received. This document is conditional upon receipt of the payment described above. If the payment is not received or is dishonored, this document is void.`;
+      const b2=doc.splitTextToSize(body2,lw); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(0,0,0); doc.text(b2,margin,y); y+=b2.length*13+14;
+      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'RELEASE OF LIEN','',dateStr);
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=14;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
+      doc.text('Dated this ____ day of ____________, 20__.', margin, y); y+=28;
+
+      // WITNESS block (left) and BY block (right) — same top y
+      const sigY = y;
+      const bx = W/2+10;
+      const col1w = W/2-margin-20;
+      const col2w = W/2-margin-10;
+
+      // WITNESS label
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(0,0,0);
+      doc.text("WITNESS",margin,sigY);
+      // Signature line
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(margin, sigY+18, margin+col1w, sigY+18);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(0,0,0);
+      doc.text("Signature", margin, sigY+28);
+      // Print Name line
+      doc.line(margin, sigY+44, margin+col1w, sigY+44);
+      doc.text("Print Name", margin, sigY+54);
+
+      // BY label + company name inline
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(0,0,0);
+      doc.text("BY:", bx, sigY);
+      const co = g('r_signer_company');
+      if(co){ doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text(co, bx+18, sigY); }
+      // Signature line
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(bx, sigY+18, bx+col2w, sigY+18);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(0,0,0);
+      doc.text("Signature", bx, sigY+28);
+      // Print Name and Title on one line
+      doc.line(bx, sigY+44, bx+col2w, sigY+44);
+      doc.text("Print Name & Title", bx, sigY+54);
+
+      y = sigY + 90;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=20;
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text("STATE OF FLORIDA",margin,y); y+=14;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text('COUNTY OF ____________________',margin,y); y+=14;
+      const rdEl=document.getElementById('r_dated_text');
+      const rdDay=rdEl?.dataset?.day||'____', rdMonth=rdEl?.dataset?.month||'____________', rdYear=rdEl?.dataset?.year||'__';
+      const notarytxt=`The foregoing instrument was acknowledged before me this ${rdDay} day of ${rdMonth}, 20${rdYear} by ${g('r_signer_name')||'________________________________'}.`;
+      const nl=doc.splitTextToSize(notarytxt,lw); doc.text(nl,margin,y); y+=nl.length*13+12;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("[ ] Personally known   OR   [ ] Produced ID: ________________________________",margin,y); y+=22;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(margin,y+14,margin+200,y+14); doc.text("Notary Signature",margin,y+10); y+=28;
+      doc.line(margin,y+14,margin+200,y+14); doc.text("Print Name",margin,y+10); y+=28;
+      doc.line(margin,y+14,margin+200,y+14); doc.text("Commission No.",margin,y+10); y+=28;
+      doc.line(margin,y+14,margin+200,y+14); doc.text("My Commission Expires",margin,y+10);
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='ReleaseOfLien_'+(g('r_project')||'Project').replace(/\s+/g,'_').slice(0,30)+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+    // ── TRANSMITTAL ──
+    else if(type==='transmittal'){
+      const dateStr=g('t_date')?new Date(g('t_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'TRANSMITTAL LETTER','',dateStr);
+      // Info block: two-column layout — left: TO/ATTN, right: Project/Job + Date/JobNo
+      const col1x = margin;
+      const col2x = W/2 + 10;
+      const colW  = W/2 - margin - 10;
+
+      // LEFT: TO
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...blue);
+      doc.text("TO",col1x,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text(g('t_to_name')||'',col1x,y+13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      const addrL=doc.splitTextToSize(g('t_to_addr')||'',colW);
+      addrL.forEach((ln,i)=>doc.text(ln,col1x,y+25+i*12));
+      // ATTN
+      const attnY = y+25+addrL.length*12+6;
+      if(g('t_attn')){
+        doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...blue); doc.text("ATTN",col1x,attnY);
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text(g('t_attn'),col1x,attnY+11);
+      }
+
+      // RIGHT: Project/Job
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...blue);
+      doc.text("PROJECT / JOB",col2x,y);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      const pjLines=doc.splitTextToSize(g('t_project')||'',colW);
+      pjLines.forEach((ln,i)=>doc.text(ln,col2x,y+13+i*12));
+      // Date + Job No under project
+      const djY = y+13+pjLines.length*12+8;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...blue);
+      doc.text("DATE",col2x,djY);
+      doc.text("JOB NO.",col2x+80,djY);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text(dateStr,col2x,djY+11);
+      doc.text(g('t_job_no')||'',col2x+80,djY+11);
+
+      y = Math.max(attnY+22, djY+22);
+      doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(margin,y,W-margin,y); y+=14;
+      // Sending
+      function getChecked(id){ return Array.from(document.querySelectorAll('#'+id+' input:checked')).map(c=>c.value); }
+      const sending=getChecked('t_sending_checks');
+      const following=getChecked('t_following_checks');
+      doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...blue); doc.text("WE ARE SENDING YOU:",margin,y); y+=13;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(40,40,40);
+      doc.text(sending.length>0?sending.join('  ·  '):'—',margin,y); y+=12;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...blue); doc.text("THE FOLLOWING:",margin,y+6); y+=18;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(40,40,40);
+      doc.text(following.length>0?following.join('  ·  '):'—',margin,y); y+=16;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=12;
+      // Items table
+      const tBody=tLines.length>0?tLines.map(l=>[l.date,l.no,l.desc]):[];
+      while(tBody.length<5) tBody.push(['','','']);
+      doc.autoTable({startY:y,head:[['DATE','NO.','DESCRIPTION']],body:tBody,margin:{left:margin,right:margin},pageBreak:'auto',showHead:'everyPage',styles:{font:"helvetica",fontSize:9,cellPadding:6,textColor:[0,0,0],fillColor:[255,255,255]},headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},alternateRowStyles:{fillColor:[255,255,255]},columnStyles:{0:{cellWidth:80},1:{cellWidth:40,halign:'center'},2:{cellWidth:'auto'}},tableLineColor:[200,210,220],tableLineWidth:0.3});
+      y=doc.lastAutoTable.finalY+12;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=12;
+      // Transmitted
+      const transmitted=getChecked('t_transmitted_checks');
+      doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...blue); doc.text("THESE ARE TRANSMITTED:",margin,y); y+=13;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(40,40,40);
+      if(transmitted.length>0){ const tl=doc.splitTextToSize(transmitted.join('  ·  '),W-margin*2); doc.text(tl,margin,y); y+=tl.length*12+8; } else { y+=10; }
+      // Copies
+      const ca=g('t_copies_approval'), cd=g('t_copies_dist');
+      if(ca||cd){ doc.text(`Copies for approval: ${ca||'—'}     Copies for distribution: ${cd||'—'}`,margin,y); y+=14; }
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=12;
+      // Remarks
+      if(g('t_remarks')){
+        doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...blue); doc.text("REMARKS:",margin,y); y+=13;
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(40,40,40);
+        const rl=doc.splitTextToSize(g('t_remarks'),W-margin*2); doc.text(rl,margin,y); y+=rl.length*12+14;
+      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'TRANSMITTAL LETTER','',dateStr);
+      }
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=12;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
+      doc.text("Copy: "+(g('t_copy')||'_______________'),margin,y);
+      doc.text("Signed: "+(g('t_signed')||'_______________'),W-margin,y,{align:"right"});
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='TransmittalLetter_'+(g('t_project')||'Project').replace(/\s+/g,'_').slice(0,30)+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+    doc.save(fn);
+    statEl.className='status-msg ok';
+    statEl.textContent='✓ '+fn+' downloaded successfully.';
+  } catch(e){
+    statEl.className='status-msg err';
+    statEl.textContent='Error: '+e.message;
+    console.error(e);
+  }
+  document.getElementById(btnId).closest('button').disabled=false;
+  document.getElementById(btnId).textContent={proposal:'⬇ Generate Proposal PDF',estimate:'⬇ Generate Estimate PDF',rol:'⬇ Generate Release of Lien PDF',transmittal:'⬇ Generate Transmittal Letter PDF'}[type];
+}
+
+// ── Dated text from date picker ──────────────────────────
+function updateDatedText(val) {
+  if (!val) { document.getElementById('r_dated_text').value = ''; return; }
+  const d = new Date(val + 'T12:00:00');
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const day = d.getDate();
+  const month = months[d.getMonth()];
+  const year = String(d.getFullYear()).slice(-2);
+  document.getElementById('r_dated_text').value = `Dated this ${day} day of ${month}, 20${year}.`;
+  // also sync legacy fields used in notary block
+  document.getElementById('r_dated_text').dataset.day = day;
+  document.getElementById('r_dated_text').dataset.month = month;
+  document.getElementById('r_dated_text').dataset.year = year;
+}
+
+// ── Number to Words ──────────────────────────────────────
+function amountToWords(val) {
+  const num = parseFloat(val.replace(/,/g,''));
+  if (isNaN(num) || num < 0) { document.getElementById('r_amount_words').value=''; return; }
+  const dollars = Math.floor(num);
+  const cents = Math.round((num - dollars) * 100);
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+    'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function words(n) {
+    if (n === 0) return '';
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' '+ones[n%10] : '');
+    return ones[Math.floor(n/100)]+' Hundred'+(n%100 ? ' '+words(n%100) : '');
+  }
+  function fullWords(n) {
+    if (n === 0) return 'Zero';
+    let result = '';
+    if (n >= 1000000) { result += words(Math.floor(n/1000000))+' Million '; n %= 1000000; }
+    if (n >= 1000)    { result += words(Math.floor(n/1000))+' Thousand '; n %= 1000; }
+    if (n > 0)        { result += words(n); }
+    return result.trim();
+  }
+  const centsStr = cents > 0 ? cents+'/100' : '00/100';
+  document.getElementById('r_amount_words').value = fullWords(dollars) + ' and ' + centsStr;
+}
+
+// ── Build payment terms from checkboxes ──────────────────
+function buildPayTerms() {
+  const parts = [];
+  if(document.getElementById('p_dep_30')?.checked) parts.push('30% deposit');
+  if(document.getElementById('p_dep_50')?.checked) parts.push('50% deposit');
+  if(document.getElementById('p_dep_progress')?.checked) parts.push('then progress payments');
+  if(document.getElementById('p_dep_final30')?.checked) parts.push('Final due 30 days after completion of this work');
+  if(document.getElementById('p_dep_final')?.checked) parts.push('Final due upon completion');
+  const ta = document.getElementById('p_pay');
+  if(ta) ta.value = parts.length ? parts.join(' - ')+'.' : '';
+}
+
+// Init
+document.querySelectorAll('input[type=date]').forEach(el=>el.value=new Date().toISOString().slice(0,10));
+addLine('p'); addLine('e'); addTLine();
+</script>
+</body>
+</html>
