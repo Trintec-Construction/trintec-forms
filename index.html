@@ -96,6 +96,7 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
     <button class="tab" onclick="switchTab('estimate')">🧾 Estimate</button>
     <button class="tab" onclick="switchTab('rol')">🔓 Release of Lien</button>
     <button class="tab" onclick="switchTab('transmittal')">📬 Transmittal</button>
+    <button class="tab" onclick="switchTab('checkrequest')">💰 Check Request</button>
   </div>
 
   <!-- ═══════════════ PROPOSAL PANEL ═══════════════ -->
@@ -309,6 +310,46 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
   </div>
 </div>
 
+  <!-- ═══════════════ CHECK REQUEST PANEL ═══════════════ -->
+  <div class="panel" id="panel-checkrequest">
+    <div class="card">
+      <div class="card-title">Check Request Info</div>
+      <div class="row one">
+        <div class="field"><label>Date</label><input type="date" id="cr_date"/></div>
+      </div>
+      <input type="hidden" id="cr_amount"/><input type="hidden" id="cr_amount_words_hidden"/>
+      <div class="row">
+        <div class="field"><label>To</label><input id="cr_to" placeholder=""/></div>
+        <div class="field"><label>I. (Invoice / Reference)</label><input id="cr_ref" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Description / Expenses</div>
+      <div class="li-header" style="grid-template-columns:100px 1fr 100px 90px 36px">
+        <span>Date</span><span>Description</span><span>Amount</span><span>Code</span><span></span>
+      </div>
+      <div id="cr_li_wrap"></div>
+      <button class="add-line-btn" onclick="addCRLine()">+ Add expense</button>
+      <div class="total-row">
+        <span class="total-label">Total</span>
+        <span class="total-amount" id="cr_tot">$0.00</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Project Details</div>
+      <div class="row">
+        <div class="field"><label>Project No.</label><input id="cr_proj_no" placeholder=""/></div>
+        <div class="field"><label>Code No.</label><input id="cr_code_no" placeholder=""/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Requested By</label><input id="cr_req_by" placeholder=""/></div>
+        <div class="field"><label>Approved By</label><input id="cr_app_by" placeholder=""/></div>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('checkrequest')"><span id="cr_btn_txt">⬇ Generate Check Request PDF</span></button>
+    <div class="status-msg" id="cr_status"></div>
+  </div>
+
 <footer>Trintec Construction Inc. · Document Generator</footer>
 
 <script>
@@ -319,7 +360,7 @@ let tLines = [];
 // ── Tab switching ──────────────────────────────────────────
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach((b,i) => {
-    const ids = ['proposal','estimate','rol','transmittal'];
+    const ids = ['proposal','estimate','rol','transmittal','checkrequest'];
     b.classList.toggle('active', ids[i]===t);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -393,6 +434,41 @@ function renderLines(prefix) {
         <input placeholder="0.00" value="${item.unit}" oninput="updateLine('p',${i},'unit',this.value);pLines[${i}].qty='1';updateLine('p',${i},'qty','1')"/>
         <button class="rm-btn" onclick="removeLine('p',${i})">✕</button>`;
     }
+    c.appendChild(row);
+  });
+}
+
+// Check Request lines
+let crLines = [];
+function addCRLine(){ crLines.push({date:'',desc:'',amount:'',code:''}); renderCRLines(); }
+function removeCRLine(i){ crLines.splice(i,1); renderCRLines(); updateCRTotal(); }
+function updateCRLine(i,f,v){
+  crLines[i][f]=v;
+  if(f==='amount') updateCRTotal();
+}
+function updateCRTotal(){
+  const tot = crLines.reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+  document.getElementById('cr_tot').textContent='$'+fmt(tot);
+  const amtInput = document.getElementById('cr_amount');
+  if(amtInput){ amtInput.value = tot>0 ? fmt(tot) : ''; }
+  crAmountToWords(String(tot));
+}
+function renderCRLines(){
+  const c=document.getElementById('cr_li_wrap'); if(!c) return;
+  c.innerHTML='';
+  crLines.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='li-row';
+    row.style.gridTemplateColumns='100px 1fr 100px 90px 36px';
+    row.style.background = i%2===0 ? '#ffffff' : '#f5f7fa';
+    row.style.borderRadius = '6px';
+    row.style.padding = '2px 4px';
+    const inputStyle = `background:transparent;border:none;border-bottom:1px solid #dde1ea;border-radius:0;padding:6px 4px;font-size:13px;`;
+    row.innerHTML=`<input type="date" value="${item.date}" oninput="updateCRLine(${i},'date',this.value)" style="${inputStyle}font-size:12px"/>
+      <input placeholder="" value="${item.desc}" oninput="updateCRLine(${i},'desc',this.value)" style="${inputStyle}"/>
+      <input placeholder="0.00" value="${item.amount}" oninput="updateCRLine(${i},'amount',this.value)" style="${inputStyle}text-align:right"/>
+      <input placeholder="" value="${item.code}" oninput="updateCRLine(${i},'code',this.value)" style="${inputStyle}text-align:center"/>
+      <button class="rm-btn" onclick="removeCRLine(${i})" style="background:none;border:none;">✕</button>`;
     c.appendChild(row);
   });
 }
@@ -516,8 +592,8 @@ function pagedTable(doc, opts, W, margin, blue, gray, lightgray, docLabel, docNu
 
 // ── Main generator ────────────────────────────────────────
 async function genDoc(type) {
-  const btnId  = {proposal:'p_btn_txt',estimate:'e_btn_txt',rol:'r_btn_txt',transmittal:'t_btn_txt'}[type];
-  const statId = {proposal:'p_status',estimate:'e_status',rol:'r_status',transmittal:'t_status'}[type];
+  const btnId  = {proposal:'p_btn_txt',estimate:'e_btn_txt',rol:'r_btn_txt',transmittal:'t_btn_txt',checkrequest:'cr_btn_txt'}[type];
+  const statId = {proposal:'p_status',estimate:'e_status',rol:'r_status',transmittal:'t_status',checkrequest:'cr_status'}[type];
   const btnEl  = document.getElementById(btnId);
   const statEl = document.getElementById(statId);
   btnEl.closest('button').disabled=true;
@@ -841,7 +917,80 @@ async function genDoc(type) {
       fn='TransmittalLetter_'+(g('t_project')||'Project').replace(/\s+/g,'_').slice(0,30)+'_'+dateStr.replace(/\//g,'-')+'.pdf';
     }
 
-    doc.save(fn);
+    // ── CHECK REQUEST ──
+    else if(type==='checkrequest'){
+      const dateStr=g('cr_date')?new Date(g('cr_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'CHECK REQUEST','',dateStr);
+      const crArgs=[W,margin,blue,gray,lightgray,'CHECK REQUEST','',dateStr];
+      const lw=W-margin*2;
+
+      // Date / To / I.
+      function crField(label, val, lx, ly, fw){
+        doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.text(label,lx,ly);
+        const lw2=doc.getTextWidth(label)+4;
+        doc.setFont("helvetica", val?"bold":"normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.text(val||'',lx+lw2,ly);
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.3);
+        doc.line(lx+lw2,ly+2,lx+fw,ly+2);
+      }
+
+      // To + I on same line
+      crField("To:",g('cr_to'),margin,y,220);
+      crField("I.",g('cr_ref'),W/2,y,W-margin-W/2); y+=18;
+
+      // Amount
+      const amtDisplay = g('cr_amount') ? '$'+parseFloat(g('cr_amount').replace(/,/g,'')).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+      const amtWords = document.getElementById('cr_amount_words_hidden')?.value||'';
+      crField("Amount ($$):",amtDisplay,margin,y,180);
+      if(amtWords){ doc.setFont("helvetica","italic"); doc.setFontSize(8); doc.setTextColor(60,60,60); doc.text("("+amtWords+")",margin+190,y); }
+      y+=20;
+
+      // Expense table
+      const crTBody = crLines.length>0
+        ? crLines.map(l=>[
+            l.date ? new Date(l.date+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}) : '',
+            l.desc,
+            l.amount ? '$'+parseFloat(l.amount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '',
+            l.code
+          ])
+        : [['','','','']];
+      // pad to min 8 rows
+      while(crTBody.length<8) crTBody.push(['','','','']);
+      const crTotal = crLines.reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+      crTBody.push(['','','$'+crTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'']);
+
+      y = pagedTable(doc,{
+        startY:y,
+        head:[['DATE','DESCRIPTION','AMOUNT','CODE']],
+        body:crTBody,
+        styles:{font:"helvetica",fontSize:9,cellPadding:6,textColor:[0,0,0],fillColor:[255,255,255]},
+        headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},
+        alternateRowStyles:{fillColor:[245,247,250]},
+        columnStyles:{0:{cellWidth:80},1:{cellWidth:'auto'},2:{cellWidth:90,halign:'right'},3:{cellWidth:70,halign:'center'}},
+        tableLineColor:[200,210,220],tableLineWidth:0.3,
+        didParseCell: function(data){
+          // Bold the total row
+          if(data.row.index===crTBody.length-1){
+            data.cell.styles.fontStyle='bold';
+            data.cell.styles.textColor=[26,58,92];
+          }
+        }
+      },W,margin,...crArgs.slice(2)); y+=14;
+
+      // Project / Code / Requested / Approved — stacked vertically with more space
+      y=checkPage(doc,y,...crArgs,120); y+=10;
+      const fw2 = W-margin*2;
+      crField("Project No.:",g('cr_proj_no'),margin,y,fw2*0.45); y+=28;
+      crField("Code No.:",g('cr_code_no'),margin,y,fw2*0.45); y+=28;
+      crField("Requested By:",g('cr_req_by'),margin,y,fw2*0.45); y+=28;
+      crField("Approved By:",g('cr_app_by'),margin,y,fw2*0.45);
+
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='CheckRequest_'+(g('cr_to')||'Request').replace(/\s+/g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+        doc.save(fn);
     statEl.className='status-msg ok';
     statEl.textContent='✓ '+fn+' downloaded successfully.';
   } catch(e){
@@ -850,7 +999,19 @@ async function genDoc(type) {
     console.error(e);
   }
   document.getElementById(btnId).closest('button').disabled=false;
-  document.getElementById(btnId).textContent={proposal:'⬇ Generate Proposal PDF',estimate:'⬇ Generate Estimate PDF',rol:'⬇ Generate Release of Lien PDF',transmittal:'⬇ Generate Transmittal Letter PDF'}[type];
+  document.getElementById(btnId).textContent={proposal:'⬇ Generate Proposal PDF',estimate:'⬇ Generate Estimate PDF',rol:'⬇ Generate Release of Lien PDF',transmittal:'⬇ Generate Transmittal Letter PDF',checkrequest:'⬇ Generate Check Request PDF'}[type];
+}
+
+// ── Check Request amount to words ────────────────────────
+function crAmountToWords(val) {
+  const num = typeof val==='number' ? val : parseFloat((val||'').replace(/,/g,''));
+  if (isNaN(num)||num<0) return;
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function w(n){if(n===0)return '';if(n<20)return ones[n];if(n<100)return tens[Math.floor(n/10)]+(n%10?' '+ones[n%10]:'');return ones[Math.floor(n/100)]+' Hundred'+(n%100?' '+w(n%100):'');}
+  function fw(n){if(n===0)return 'Zero';let r='';if(n>=1000000){r+=w(Math.floor(n/1000000))+' Million ';n%=1000000;}if(n>=1000){r+=w(Math.floor(n/1000))+' Thousand ';n%=1000;}if(n>0)r+=w(n);return r.trim();}
+  const dollars=Math.floor(num), cents=Math.round((num-dollars)*100);
+  document.getElementById('cr_amount_words_hidden').value = fw(dollars)+' and '+cents+'/100';
 }
 
 // ── Dated text from date picker ──────────────────────────
@@ -909,7 +1070,7 @@ function buildPayTerms() {
 
 // Init
 document.querySelectorAll('input[type=date]').forEach(el=>el.value=new Date().toISOString().slice(0,10));
-addLine('p'); addLine('e'); addTLine();
+addLine('p'); addLine('e'); addTLine(); addCRLine(); renderCRLines();
 </script>
 </body>
 </html>
