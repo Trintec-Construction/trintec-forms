@@ -52,6 +52,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;min-height:1
 footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
 
 /* ── Responsive breakpoints ───────────────────────────── */
+.cr-grid{grid-template-columns:100px 1fr 100px 90px 36px}
+@media(max-width:640px){
+.cr-grid{grid-template-columns:1fr 1fr}
+.cr-grid span:nth-child(3),.cr-grid span:nth-child(4),.cr-grid span:nth-child(5){display:none}
+}
 @media(max-width:640px){
   .topbar{padding:0 .75rem;gap:8px;height:54px}
   .topbar img{height:36px}
@@ -325,7 +330,7 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
     </div>
     <div class="card">
       <div class="card-title">Description / Expenses</div>
-      <div class="li-header" style="grid-template-columns:100px 1fr 100px 90px 36px">
+      <div class="li-header cr-grid">
         <span>Date</span><span>Description</span><span>Amount</span><span>Code</span><span></span>
       </div>
       <div id="cr_li_wrap"></div>
@@ -458,17 +463,33 @@ function renderCRLines(){
   c.innerHTML='';
   crLines.forEach((item,i)=>{
     const row=document.createElement('div');
-    row.className='li-row';
-    row.style.gridTemplateColumns='100px 1fr 100px 90px 36px';
+    row.className='li-row cr-grid';
     row.style.background = i%2===0 ? '#ffffff' : '#f5f7fa';
     row.style.borderRadius = '6px';
     row.style.padding = '2px 4px';
-    const inputStyle = `background:transparent;border:none;border-bottom:1px solid #dde1ea;border-radius:0;padding:6px 4px;font-size:13px;`;
-    row.innerHTML=`<input type="date" value="${item.date}" oninput="updateCRLine(${i},'date',this.value)" style="${inputStyle}font-size:12px"/>
-      <input placeholder="" value="${item.desc}" oninput="updateCRLine(${i},'desc',this.value)" style="${inputStyle}"/>
-      <input placeholder="0.00" value="${item.amount}" oninput="updateCRLine(${i},'amount',this.value)" style="${inputStyle}text-align:right"/>
-      <input placeholder="" value="${item.code}" oninput="updateCRLine(${i},'code',this.value)" style="${inputStyle}text-align:center"/>
-      <button class="rm-btn" onclick="removeCRLine(${i})" style="background:none;border:none;">✕</button>`;
+    const iS = `background:transparent;border:none;border-bottom:1px solid #dde1ea;border-radius:0;padding:6px 4px;font-size:13px;width:100%;font-family:inherit;`;
+    const isMobile = window.innerWidth <= 640;
+    if(isMobile){
+      // Mobile: 2-row card layout
+      row.style.gridTemplateColumns = '1fr';
+      row.style.gap = '0';
+      row.innerHTML=`
+        <div style="display:grid;grid-template-columns:110px 1fr 32px;gap:4px;align-items:center;margin-bottom:2px">
+          <input type="date" value="${item.date}" oninput="updateCRLine(${i},'date',this.value)" style="${iS}font-size:12px"/>
+          <input placeholder="Description" value="${item.desc}" oninput="updateCRLine(${i},'desc',this.value)" style="${iS}"/>
+          <button class="rm-btn" onclick="removeCRLine(${i})">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">
+          <input placeholder="Amount" value="${item.amount}" oninput="updateCRLine(${i},'amount',this.value)" style="${iS}text-align:right"/>
+          <input placeholder="Code" value="${item.code}" oninput="updateCRLine(${i},'code',this.value)" style="${iS}text-align:center"/>
+        </div>`;
+    } else {
+      row.innerHTML=`<input type="date" value="${item.date}" oninput="updateCRLine(${i},'date',this.value)" style="${iS}font-size:12px"/>
+        <input placeholder="" value="${item.desc}" oninput="updateCRLine(${i},'desc',this.value)" style="${iS}"/>
+        <input placeholder="0.00" value="${item.amount}" oninput="updateCRLine(${i},'amount',this.value)" style="${iS}text-align:right"/>
+        <input placeholder="" value="${item.code}" oninput="updateCRLine(${i},'code',this.value)" style="${iS}text-align:center"/>
+        <button class="rm-btn" onclick="removeCRLine(${i})">✕</button>`;
+    }
     c.appendChild(row);
   });
 }
