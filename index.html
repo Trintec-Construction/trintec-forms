@@ -172,12 +172,10 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
       </div>
     </div>
     <div class="card">
-      <div class="card-title">Client</div>
-      <div class="row one"><div class="field"><label>Name / Attn</label><input id="e_cn" placeholder=""/></div></div>
-      <div class="row">
-        <div class="field"><label>Company</label><input id="e_cc" placeholder=""/></div>
-        <div class="field"><label>Address</label><input id="e_ca" placeholder=""/></div>
-      </div>
+      <div class="card-title">TO</div>
+      <div class="row one"><div class="field"><label>Company</label><input id="e_cc" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Address</label><input id="e_ca" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Attn</label><input id="e_cn" placeholder=""/></div></div>
     </div>
     <div class="card">
       <div class="card-title">Scope of Work</div>
@@ -188,7 +186,22 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
       <div class="li-header" id="e_li_hdr" style="grid-template-columns:65px 1fr 110px 110px 40px"><span>QTY</span><span>Description</span><span>Unit Price</span><span>Line Total</span><span></span></div>
       <div id="e_li_wrap"></div>
       <button class="add-line-btn" onclick="addLine('e')">+ Add line</button>
-      <div class="total-row"><span class="total-label">Total</span><span class="total-amount" id="e_tot">$0.00</span></div>
+      <div class="total-row" style="margin-bottom:0">
+        <span class="total-label">Subtotal</span>
+        <span class="total-amount" id="e_subtotal">$0.00</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid #eaecf0">
+        <span style="font-size:13px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.5px">Overhead ($)</span>
+        <input id="e_overhead" type="number" min="0" step="0.01" placeholder="0.00" style="width:110px;padding:7px 10px;border:1px solid #dde1ea;border-radius:8px;font-size:14px;text-align:right;font-family:inherit;background:#fafbfc" oninput="updateETotal()"/>
+      </div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px">
+        <span style="font-size:13px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.5px">Profit ($)</span>
+        <input id="e_profit" type="number" min="0" step="0.01" placeholder="0.00" style="width:110px;padding:7px 10px;border:1px solid #dde1ea;border-radius:8px;font-size:14px;text-align:right;font-family:inherit;background:#fafbfc" oninput="updateETotal()"/>
+      </div>
+      <div class="total-row" style="margin-top:10px;padding-top:10px">
+        <span class="total-label">Total</span>
+        <span class="total-amount" id="e_tot">$0.00</span>
+      </div>
     </div>
     <div class="card">
       <div class="card-title">Payment Terms</div>
@@ -537,6 +550,17 @@ function switchTab(t) {
 // ── Line items helpers ─────────────────────────────────────
 function fmt(n){return(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function g(id){return(document.getElementById(id)||{}).value||'';}
+
+function updateETotal(){
+  const sub=eLines.reduce((s,l)=>{
+    const et=(!l.qty&&l.manualTotal!==undefined&&l.manualTotal!=='')?parseFloat(l.manualTotal)||0:l.total||0;
+    return s+et;
+  },0);
+  const ov=parseFloat(document.getElementById('e_overhead')?.value)||0;
+  const pr=parseFloat(document.getElementById('e_profit')?.value)||0;
+  if(document.getElementById('e_subtotal')) document.getElementById('e_subtotal').textContent='$'+fmt(sub);
+  if(document.getElementById('e_tot')) document.getElementById('e_tot').textContent='$'+fmt(sub+ov+pr);
+}
 
 function addLine(prefix) {
   const arr = prefix==='p' ? pLines : eLines;
@@ -929,12 +953,11 @@ async function genDoc(type) {
       const dateStr=g('e_date')?new Date(g('e_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
       const totalAmt=eLines.reduce((s,l)=>{ const et=(!l.qty&&l.manualTotal!==undefined&&l.manualTotal!=='')?parseFloat(l.manualTotal)||0:l.total||0; return s+et; },0);
       pdfHeader(doc,W,margin,blue,gray,lightgray,'ESTIMATE',g('e_num'),dateStr);
-      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray); doc.text("TO",margin,y);
-      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(30,30,30); doc.text(g('e_cn')||'—',margin,y+13);
-      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
-      if(g('e_ca')) doc.text(g('e_ca'),margin,y+25);
-      if(g('e_cc')) doc.text('Attn: '+g('e_cc'),margin,y+37);
-      y+=54;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...lightgray); doc.text("TO",margin,y); y+=13;
+      if(g('e_cc')){ doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(g('e_cc'),margin,y); y+=12; }
+      if(g('e_ca')){ doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray); const cal=doc.splitTextToSize(g('e_ca'),W/2-margin); doc.text(cal,margin,y); y+=cal.length*12; }
+      if(g('e_cn')){ doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray); doc.text('Attn: '+g('e_cn'),margin,y); y+=12; }
+      y+=10;
       const eArgs = [W,margin,blue,gray,lightgray,'ESTIMATE',g('e_num'),dateStr];
       if(g('e_scope')){ y=writeBlock(doc,g('e_scope'),9.5,false,[40,40,40],margin,W-margin*2,y,13,...eArgs); y+=10; }
       y+=6;
@@ -942,10 +965,30 @@ async function genDoc(type) {
       const tBody=eLines.length>0?eLines.map(l=>[l.qty,l.desc,l.unit?('$'+fmt(parseFloat(l.unit)||0)):'','$'+fmt(effT(l))]):[];
       while(tBody.length<5) tBody.push(['','','','']);
       y = pagedTable(doc,{startY:y,head:[['QTY','DESCRIPTION','UNIT PRICE','LINE TOTAL']],body:tBody,styles:{font:"helvetica",fontSize:9,cellPadding:7,textColor:[0,0,0],fillColor:[255,255,255]},headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},alternateRowStyles:{fillColor:[255,255,255]},columnStyles:{0:{cellWidth:45,halign:'center'},1:{cellWidth:'auto'},2:{cellWidth:80,halign:'right'},3:{cellWidth:80,halign:'right'}},tableLineColor:[200,210,220],tableLineWidth:0.3},W,margin,...eArgs.slice(2)); y+=14;
-      y=checkPage(doc,y,...eArgs,50);
-      doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(W-margin-160,y,W-margin,y); y+=14;
-      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...gray); doc.text("TOTAL",W-margin-160,y);
-      doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...blue); doc.text('$'+fmt(totalAmt),W-margin,y,{align:"right"}); y+=22;
+      const eSub=eLines.reduce((s,l)=>{const et=(!l.qty&&l.manualTotal!==undefined&&l.manualTotal!=='')?parseFloat(l.manualTotal)||0:l.total||0;return s+et;},0);
+      const eOv=parseFloat(document.getElementById('e_overhead')?.value)||0;
+      const ePr=parseFloat(document.getElementById('e_profit')?.value)||0;
+      const eGrandTotal=eSub+eOv+ePr;
+      y=checkPage(doc,y,...eArgs,70);
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(W-margin-180,y,W-margin,y); y+=12;
+      // Subtotal
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("Subtotal",W-margin-180,y);
+      doc.text('$'+fmt(eSub),W-margin,y,{align:"right"}); y+=12;
+      // Overhead
+      if(eOv>0){
+        doc.text("Overhead",W-margin-180,y);
+        doc.text('$'+fmt(eOv),W-margin,y,{align:"right"}); y+=12;
+      }
+      // Profit
+      if(ePr>0){
+        doc.text("Profit",W-margin-180,y);
+        doc.text('$'+fmt(ePr),W-margin,y,{align:"right"}); y+=12;
+      }
+      doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(W-margin-180,y,W-margin,y); y+=12;
+      doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.setTextColor(...blue);
+      doc.text("TOTAL",W-margin-180,y);
+      doc.text('$'+fmt(eGrandTotal),W-margin,y,{align:"right"}); y+=22;
       if(g('e_pay')){ y=writeBlock(doc,g('e_pay'),8.5,false,gray,margin,W-margin*2,y,12,...eArgs); y+=14; }
       // Thank you
       y=checkPage(doc,y,...eArgs,40);
