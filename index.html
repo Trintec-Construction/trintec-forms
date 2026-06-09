@@ -14,7 +14,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;min-height:1
 .topbar-title{font-size:20px;font-weight:700;color:#1a3a5c;white-space:nowrap;text-align:center;letter-spacing:0.3px}
 .topbar-sub{font-size:13px;color:#6b7280;margin-top:4px;white-space:nowrap;text-align:center;font-weight:400;letter-spacing:0.5px}
 .container{max-width:820px;margin:0 auto;padding:1.5rem 1rem;overflow:hidden}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:1.25rem}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.25rem}
 .tab{padding:10px 4px;border:1.5px solid #d0d7e3;background:white;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;color:#555;transition:all .18s;white-space:normal;text-align:center;line-height:1.3;word-break:break-word}
 .tab.active{background:#1a3a5c;color:white;border-color:#1a3a5c}
 .tab:hover:not(.active){border-color:#1a3a5c;color:#1a3a5c}
@@ -101,9 +101,12 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
   <div class="tabs">
     <button class="tab active" onclick="switchTab('proposal')">📄 Proposal</button>
     <button class="tab" onclick="switchTab('estimate')">🧾 Estimate</button>
+    <button class="tab" onclick="switchTab('po')">🛒 PO</button>
     <button class="tab" onclick="switchTab('rol')">🔓 Release of Lien</button>
     <button class="tab" onclick="switchTab('transmittal')">📬 Transmittal</button>
+    <button class="tab" onclick="switchTab('submittal')">📋 Submittal</button>
     <button class="tab" onclick="switchTab('checkrequest')">💰 Check Request</button>
+    <button class="tab" onclick="switchTab('letter')">✉️ Letter</button>
   </div>
 
   <!-- ═══════════════ PROPOSAL PANEL ═══════════════ -->
@@ -221,10 +224,10 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
         <div class="field"><label>Amount ($)</label><input id="r_amount_num" placeholder="" oninput="amountToWords(this.value)"/></div>
         <div class="field" style="display:none"><label>Amount in words (auto)</label><input id="r_amount_words" placeholder="Auto-filled" readonly style="background:#f0f4f8;color:#1a3a5c;font-weight:500"/></div>
       </div>
-      <div class="row">
+      <div class="row one">
         <div class="field"><label>Paid by</label><input id="r_paid_by" placeholder=""/></div>
-        <div class="field"><label>Services through date</label><input type="date" id="r_through"/></div>
       </div>
+      <input type="hidden" id="r_through"/>
     </div>
     <div class="card">
       <div class="card-title">Signature</div>
@@ -355,6 +358,163 @@ footer{text-align:center;padding:1.5rem;font-size:11px;color:#aaa}
     <button class="gen-btn" onclick="genDoc('checkrequest')"><span id="cr_btn_txt">⬇ Generate Check Request PDF</span></button>
     <div class="status-msg" id="cr_status"></div>
   </div>
+  <!-- ═══════════════ SUBMITTAL PANEL ═══════════════ -->
+  <div class="panel" id="panel-submittal">
+    <div class="card">
+      <div class="card-title">Submittal Info</div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" id="sb_date"/></div>
+        <div class="field"><label>Submittal No.</label><input id="sb_num" placeholder=""/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Project</label><input id="sb_project" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">TO</div>
+      <div class="row one"><div class="field"><label>Name</label><input id="sb_to_name" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Company / Address</label><input id="sb_to_company" placeholder=""/></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Description of Submittal</div>
+      <div class="row one"><div class="field"><textarea id="sb_desc" style="min-height:70px" placeholder=""></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">This Submittal Covers the Following Material</div>
+      <div class="row one"><div class="field"><textarea id="sb_material" style="min-height:70px" placeholder=""></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Stamp / Review Status</div>
+      <div class="checkgroup" style="gap:12px 24px">
+        <label><input type="radio" name="sb_status" value="Approved" checked style="accent-color:#1a3a5c"> Approved</label>
+        <label><input type="radio" name="sb_status" value="Approve with Change Noted" style="accent-color:#1a3a5c"> Approve with Change Noted</label>
+        <label><input type="radio" name="sb_status" value="Revise & Resubmit" style="accent-color:#1a3a5c"> Revise & Resubmit</label>
+        <label><input type="radio" name="sb_status" value="Rejected" style="accent-color:#1a3a5c"> Rejected</label>
+        <label><input type="radio" name="sb_status" value="Reviewed & Approved" style="accent-color:#1a3a5c"> Reviewed & Approved</label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="field"><label>By</label><input id="sb_by" placeholder=""/></div>
+        <div class="field"><label>Comments</label><input id="sb_comments" placeholder=""/></div>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('submittal')"><span id="sb_btn_txt">⬇ Generate Submittal Cover Sheet PDF</span></button>
+    <div class="status-msg" id="sb_status_msg"></div>
+  </div>
+
+  <!-- ═══════════════ PURCHASE ORDER PANEL ═══════════════ -->
+  <div class="panel" id="panel-po">
+    <div class="card">
+      <div class="card-title">Purchase Order Info</div>
+      <div class="row">
+        <div class="field"><label>PO Number</label><input id="po_num" placeholder=""/></div>
+        <div class="field"><label>Date</label><input type="date" id="po_date"/></div>
+      </div>
+      <div class="row one">
+        <div class="field"><label>Project Number</label><input id="po_proj_num" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Vendor Information</div>
+      <div class="row one"><div class="field"><label>Vendor Name</label><input id="po_vendor" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Address</label><input id="po_vendor_addr" placeholder=""/></div></div>
+      <div class="row">
+        <div class="field"><label>Contact</label><input id="po_vendor_contact" placeholder=""/></div>
+        <div class="field"><label>Phone</label><input id="po_vendor_phone" placeholder=""/></div>
+      </div>
+      <div class="row one"><div class="field"><label>Email</label><input id="po_vendor_email" placeholder=""/></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Project Information</div>
+      <div class="row one"><div class="field"><label>Project Name</label><input id="po_proj_name" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Project Address</label><input id="po_proj_addr" placeholder=""/></div></div>
+      <div class="row">
+        <div class="field"><label>Delivery Date</label><input type="date" id="po_delivery_date"/></div>
+        <div class="field"><label>Delivery Address</label><input id="po_delivery_loc" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scope of Work / Materials</div>
+      <div class="li-header" style="grid-template-columns:40px 1fr 60px 60px 90px 90px 36px">
+        <span>#</span><span>Description</span><span>Qty</span><span>Unit</span><span>Unit Cost</span><span>Total Cost</span><span></span>
+      </div>
+      <div id="po_li_wrap"></div>
+      <button class="add-line-btn" onclick="addPOLine()">+ Add item</button>
+      <div style="margin-top:14px;border-top:1px solid #eaecf0;padding-top:12px">
+        <div style="display:flex;justify-content:flex-end;gap:16px;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;color:#6b7280">Subtotal</span>
+          <span style="font-size:15px;font-weight:600;color:#1a1a2e;min-width:100px;text-align:right" id="po_subtotal">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:16px;align-items:center;margin-bottom:8px">
+          <label style="font-size:13px;color:#6b7280;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="po_tax_exempt" style="accent-color:#1a3a5c" onchange="updatePOTotal()"> Tax Exempt
+          </label>
+          <span style="font-size:13px;color:#6b7280">Tax %</span>
+          <input id="po_tax_pct" type="number" min="0" max="100" step="0.01" placeholder="7.00" style="width:70px;padding:6px 8px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;text-align:right" oninput="updatePOTotal()"/>
+          <span style="font-size:13px;color:#1a3a5c;font-weight:600;min-width:90px;text-align:right" id="po_tax_amount">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:16px;align-items:center">
+          <span style="font-size:14px;font-weight:600;color:#8a8fa8;text-transform:uppercase;letter-spacing:.5px">Total PO Amount</span>
+          <span style="font-size:22px;font-weight:700;color:#1a3a5c;min-width:100px;text-align:right" id="po_total">$0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scope Notes</div>
+      <div class="row one"><div class="field"><textarea id="po_scope_notes" style="min-height:70px" placeholder=""></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Terms &amp; Conditions <span style="font-size:11px;font-weight:400;color:#6b7280">(editable)</span></div>
+      <div class="row one"><div class="field"><textarea id="po_tc" style="min-height:130px;font-size:13px;line-height:1.6">1. All work shall be performed in accordance with project plans and specifications.
+2. Any change in scope or cost must be approved in writing by Trintec Construction Inc. prior to execution.
+3. Invoices must reference the PO Number.
+4. Vendor shall maintain all required licenses and insurance.
+5. Payment terms: [see above].</textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Payment Terms</div>
+      <div class="checkgroup">
+        <label><input type="radio" name="po_terms" value="Net 30" checked style="accent-color:#1a3a5c"> Net 30</label>
+        <label><input type="radio" name="po_terms" value="Net 45" style="accent-color:#1a3a5c"> Net 45</label>
+        <label><input type="radio" name="po_terms" value="Net 60" style="accent-color:#1a3a5c"> Net 60</label>
+        <label><input type="radio" name="po_terms" value="Upon Completion" style="accent-color:#1a3a5c"> Upon Completion</label>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('po')"><span id="po_btn_txt">⬇ Generate Purchase Order PDF</span></button>
+    <div class="status-msg" id="po_status"></div>
+  </div>
+
+  <!-- ═══════════════ LETTER PANEL ═══════════════ -->
+  <div class="panel" id="panel-letter">
+    <div class="card">
+      <div class="card-title">Letter Info</div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" id="lt_date"/></div>
+        <div class="field"><label>Reference / Subject</label><input id="lt_ref" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">TO</div>
+      <div class="row one"><div class="field"><label>Name</label><input id="lt_to_name" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Company</label><input id="lt_to_company" placeholder=""/></div></div>
+      <div class="row one"><div class="field"><label>Address</label><input id="lt_to_addr" placeholder=""/></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Body</div>
+      <div class="row one"><div class="field"><label>Salutation</label><input id="lt_salutation" placeholder="Dear Mr./Ms.,"/></div></div>
+      <div class="row one"><div class="field"><label>Body</label><textarea id="lt_body" style="min-height:200px;font-size:13px;line-height:1.7" placeholder="Write your letter here..."></textarea></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Closing</div>
+      <div class="row">
+        <div class="field"><label>Closing phrase</label><input id="lt_closing" placeholder="Sincerely,"/></div>
+        <div class="field"><label>Sender Name</label><input id="lt_sender_name" placeholder="Petulia Schvartz"/></div>
+      </div>
+      <div class="row one"><div class="field"><label>Title</label><input id="lt_sender_title" placeholder="President"/></div></div>
+    </div>
+    <button class="gen-btn" onclick="genDoc('letter')"><span id="lt_btn_txt">⬇ Generate Letter PDF</span></button>
+    <div class="status-msg" id="lt_status"></div>
+  </div>
+
 </div>
 
 <footer>Trintec Construction Inc. · Document Generator</footer>
@@ -367,7 +527,7 @@ let tLines = [];
 // ── Tab switching ──────────────────────────────────────────
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach((b,i) => {
-    const ids = ['proposal','estimate','rol','transmittal','checkrequest'];
+    const ids = ['proposal','estimate','po','rol','transmittal','submittal','checkrequest','letter'];
     b.classList.toggle('active', ids[i]===t);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -440,6 +600,70 @@ function renderLines(prefix) {
       row.innerHTML=`<input placeholder="" value="${item.desc}" oninput="updateLine('p',${i},'desc',this.value)"/>
         <input placeholder="0.00" value="${item.unit}" oninput="updateLine('p',${i},'unit',this.value);pLines[${i}].qty='1';updateLine('p',${i},'qty','1')"/>
         <button class="rm-btn" onclick="removeLine('p',${i})">✕</button>`;
+    }
+    c.appendChild(row);
+  });
+}
+
+// Purchase Order lines
+let poLines = [];
+function addPOLine(){
+  poLines.push({desc:'',qty:'',unit:'',unitCost:'',total:0});
+  renderPOLines();
+}
+function removePOLine(i){ poLines.splice(i,1); renderPOLines(); updatePOTotal(); }
+function updatePOLine(i,f,v){
+  poLines[i][f]=v;
+  if(f==='qty'||f==='unitCost'){
+    poLines[i].total=(parseFloat(poLines[i].qty)||0)*(parseFloat(poLines[i].unitCost)||0);
+  }
+  updatePOTotal();
+  const el=document.querySelector('#po_row_'+i+' .po-line-total');
+  if(el) el.textContent='$'+fmt(poLines[i].total);
+}
+function updatePOTotal(){
+  const subtotal=poLines.reduce((s,l)=>s+(l.total||0),0);
+  document.getElementById('po_subtotal').textContent='$'+fmt(subtotal);
+  const taxExempt=document.getElementById('po_tax_exempt')?.checked;
+  const taxPctEl=document.getElementById('po_tax_pct');
+  const taxAmtEl=document.getElementById('po_tax_amount');
+  if(taxExempt&&taxPctEl){ taxPctEl.disabled=true; taxPctEl.style.opacity='0.4'; if(taxAmtEl) taxAmtEl.textContent='Exempt'; }
+  else if(taxPctEl){ taxPctEl.disabled=false; taxPctEl.style.opacity='1'; }
+  const taxPct=taxExempt?0:(parseFloat(taxPctEl?.value)||0);
+  const taxAmt=subtotal*(taxPct/100);
+  if(taxAmtEl&&!taxExempt) taxAmtEl.textContent='$'+fmt(taxAmt);
+  document.getElementById('po_total').textContent='$'+fmt(subtotal+taxAmt);
+}
+function renderPOLines(){
+  const c=document.getElementById('po_li_wrap'); if(!c) return;
+  c.innerHTML='';
+  poLines.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='li-row'; row.id='po_row_'+i;
+    const isMob=window.innerWidth<=640;
+    if(isMob){
+      row.style.gridTemplateColumns='1fr';
+      row.innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 36px;gap:4px;margin-bottom:2px">
+          <input placeholder="Description" value="${item.desc}" oninput="updatePOLine(${i},'desc',this.value)" style="font-size:13px;padding:7px 8px;border:1px solid #dde1ea;border-radius:8px;background:#fafbfc;font-family:inherit;width:100%"/>
+          <button class="rm-btn" onclick="removePOLine(${i})">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:6px">
+          <input placeholder="Qty" value="${item.qty}" oninput="updatePOLine(${i},'qty',this.value)" style="font-size:12px;padding:6px 6px;border:1px solid #dde1ea;border-radius:8px;background:#fafbfc;font-family:inherit;width:100%;text-align:center"/>
+          <input placeholder="Unit" value="${item.unit}" oninput="updatePOLine(${i},'unit',this.value)" style="font-size:12px;padding:6px 6px;border:1px solid #dde1ea;border-radius:8px;background:#fafbfc;font-family:inherit;width:100%;text-align:center"/>
+          <input placeholder="Unit $" value="${item.unitCost}" oninput="updatePOLine(${i},'unitCost',this.value)" style="font-size:12px;padding:6px 6px;border:1px solid #dde1ea;border-radius:8px;background:#fafbfc;font-family:inherit;width:100%;text-align:right"/>
+          <div class="po-line-total" style="font-size:12px;color:#6b7280;padding:6px 6px;background:#f5f6fa;border-radius:8px;text-align:right;border:1px solid #eaecf0">$${fmt(item.total)}</div>
+        </div>`;
+    } else {
+      row.style.gridTemplateColumns='40px 1fr 60px 60px 90px 90px 36px';
+      row.innerHTML=`
+        <div style="font-size:12px;color:#8a8fa8;display:flex;align-items:center;justify-content:center">${i+1}</div>
+        <input placeholder="" value="${item.desc}" oninput="updatePOLine(${i},'desc',this.value)" style="padding:7px 8px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;background:#fafbfc;font-family:inherit;width:100%"/>
+        <input placeholder="" value="${item.qty}" oninput="updatePOLine(${i},'qty',this.value)" style="padding:7px 6px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;background:#fafbfc;font-family:inherit;width:100%;text-align:center"/>
+        <input placeholder="" value="${item.unit}" oninput="updatePOLine(${i},'unit',this.value)" style="padding:7px 6px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;background:#fafbfc;font-family:inherit;width:100%;text-align:center"/>
+        <input placeholder="0.00" value="${item.unitCost}" oninput="updatePOLine(${i},'unitCost',this.value)" style="padding:7px 8px;border:1px solid #dde1ea;border-radius:8px;font-size:13px;background:#fafbfc;font-family:inherit;width:100%;text-align:right"/>
+        <div class="po-line-total" style="font-size:13px;color:#6b7280;padding:7px 8px;background:#f5f6fa;border-radius:8px;text-align:right;border:1px solid #eaecf0">$${fmt(item.total)}</div>
+        <button class="rm-btn" onclick="removePOLine(${i})">✕</button>`;
     }
     c.appendChild(row);
   });
@@ -533,10 +757,10 @@ function pdfHeader(doc, W, margin, blue, gray, lightgray, docLabel, docNum, date
   doc.textWithLink("pschvartz@trintecinc.com",cx,78,{url:"mailto:pschvartz@trintecinc.com"});
   const rx=W-margin;
   doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...blue);
-  doc.text(docLabel,rx,42,{align:"right"});
+  if(docLabel) doc.text(docLabel,rx,42,{align:"right"});
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...gray);
   if(docNum) doc.text("No. "+docNum,rx,54,{align:"right"});
-  doc.text("Date: "+dateStr,rx,66,{align:"right"});
+  if(dateStr) doc.text("Date: "+dateStr,rx,66,{align:"right"});
   doc.setDrawColor(...blue); doc.setLineWidth(2);
   doc.line(margin,96,W-margin,96);
 }
@@ -615,8 +839,8 @@ function pagedTable(doc, opts, W, margin, blue, gray, lightgray, docLabel, docNu
 
 // ── Main generator ────────────────────────────────────────
 async function genDoc(type) {
-  const btnId  = {proposal:'p_btn_txt',estimate:'e_btn_txt',rol:'r_btn_txt',transmittal:'t_btn_txt',checkrequest:'cr_btn_txt'}[type];
-  const statId = {proposal:'p_status',estimate:'e_status',rol:'r_status',transmittal:'t_status',checkrequest:'cr_status'}[type];
+  const btnId  = {proposal:'p_btn_txt',estimate:'e_btn_txt',rol:'r_btn_txt',transmittal:'t_btn_txt',checkrequest:'cr_btn_txt',submittal:'sb_btn_txt',po:'po_btn_txt',letter:'lt_btn_txt'}[type];
+  const statId = {proposal:'p_status',estimate:'e_status',rol:'r_status',transmittal:'t_status',checkrequest:'cr_status',submittal:'sb_status_msg',po:'po_status',letter:'lt_status'}[type];
   const btnEl  = document.getElementById(btnId);
   const statEl = document.getElementById(statId);
   btnEl.closest('button').disabled=true;
@@ -735,125 +959,125 @@ async function genDoc(type) {
     else if(type==='rol'){
       const dateStr=g('r_date')?new Date(g('r_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
       const rolType = document.querySelector('input[name="r_type"]:checked')?.value || 'Partial';
-      const rolTitle = rolType==='Final' ? 'FINAL RELEASE OF LIEN' : 'RELEASE OF LIEN UPON PROGRESS PAYMENT';
-      pdfHeader(doc,W,margin,blue,gray,lightgray,'RELEASE OF LIEN','',dateStr);
-      doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...blue);
-      doc.text(rolTitle,W/2,y,{align:"center"}); y+=22;
-      doc.setDrawColor(...lightgray); doc.setLineWidth(0.5); doc.line(margin,y,W-margin,y); y+=16;
+      const rolTitle = rolType==='Final' ? 'FINAL RELEASE OF LIEN' : 'RELEASE OF LIEN';
+      // No date in header, no blue line under header
+      pdfHeader(doc,W,margin,blue,gray,lightgray,rolTitle,'','');
       const lw=W-margin*2;
+      const pageH=doc.internal.pageSize.getHeight();
+      const usable=pageH-116-60; // usable height between header and footer
+
       function rolLine(label, val, yy){
         doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(26,58,92); doc.text(label,margin,yy);
-        doc.setFont("helvetica", val?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(val||'___________',margin+70,yy);
-        return yy+18;
+        doc.setFont("helvetica", val?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(val||'___________',margin+80,yy);
+        return yy+20;
       }
-      y=rolLine("PROJECT:",g('r_project'),y);
-      y=rolLine("OWNER:",g('r_owner'),y); y+=4;
-      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=14;
-      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
-      const throughLong = g('r_through') ? new Date(g('r_through')+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '___________';
-      const amtWords = g('r_amount_words')||'___________';
-      const amtNum = g('r_amount_num')||'___';
-      const paidBy = g('r_paid_by')||'___________';
-      // Render body1 with amounts bold inline
+
       function boldInline(doc, segments, x, y, lineH, maxW) {
-        // segments: [{text, bold}]
-        // Reflow into lines respecting maxW
-        let lines = [[]]; // array of arrays of segments
-        let lineW = 0;
+        let lines = [[]]; let lineW = 0;
         segments.forEach(seg => {
-          doc.setFont("helvetica", seg.bold?"bold":"normal"); doc.setFontSize(9.5);
+          doc.setFont("helvetica", seg.bold?"bold":"normal"); doc.setFontSize(10);
           const words = seg.text.split(' ');
-          words.forEach((word, wi) => {
+          words.forEach(word => {
             if(!word) return;
-            const w = doc.getTextWidth(word + ' ');
-            if(lineW + w > maxW && lineW > 0) { lines.push([]); lineW = 0; }
-            const last = lines[lines.length-1];
-            if(last.length && last[last.length-1].bold === seg.bold) {
-              last[last.length-1].text += (last[last.length-1].text.endsWith(' ')?'':' ') + word;
-            } else {
-              last.push({text: word, bold: seg.bold});
-            }
-            lineW += w;
+            const w = doc.getTextWidth(word+' ');
+            if(lineW+w>maxW && lineW>0){ lines.push([]); lineW=0; }
+            const last=lines[lines.length-1];
+            if(last.length && last[last.length-1].bold===seg.bold){ last[last.length-1].text+=' '+word; }
+            else { last.push({text:word, bold:seg.bold}); }
+            lineW+=w;
           });
         });
-        let cy = y;
-        lines.forEach(line => {
-          let cx = x;
-          line.forEach(seg => {
-            doc.setFont("helvetica", seg.bold?"bold":"normal"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
-            doc.text(seg.text+' ', cx, cy);
-            cx += doc.getTextWidth(seg.text+' ');
-          });
-          cy += lineH;
-        });
+        let cy=y;
+        lines.forEach(line=>{ let cx=x; line.forEach(seg=>{ doc.setFont("helvetica",seg.bold?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(seg.text+' ',cx,cy); cx+=doc.getTextWidth(seg.text+' '); }); cy+=lineH; });
         return cy;
       }
+
+      const throughLong = g('r_date') ? new Date(g('r_date')+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '___________';
+      const amtWords = g('r_amount_words')||'___________';
+      const rawNum = parseFloat((g('r_amount_num')||'').replace(/,/g,''))||0;
+      const amtNum = rawNum ? rawNum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '___';
+      const paidBy = g('r_paid_by')||'___________';
+
+      // ── SECTION 1: Project info ──────────────────────────
+      y += 10;
+      y=rolLine("PROJECT:",g('r_project'),y);
+      y=rolLine("OWNER:",g('r_owner'),y);
+      y+=10;
+
+      // ── SECTION 2: Body text ─────────────────────────────
       const body1segs = [
         {text:'The undersigned lienor, in consideration of the sum of', bold:false},
-        {text:amtWords+' Dollars ($'+amtNum+')', bold:!!(g('r_amount_words')&&g('r_amount_num'))},
-        {text:'paid by', bold:false},
-        {text:paidBy, bold:!!g('r_paid_by')},
-        {text:'hereby waives and releases its lien and right to claim a lien for labor, services, or materials furnished through', bold:false},
-        {text:throughLong, bold:!!g('r_through')},
+        {text:' '+amtWords+' Dollars ($'+amtNum+')', bold:!!(g('r_amount_words')&&g('r_amount_num'))},
+        {text:' paid by', bold:false},
+        {text:' '+paidBy, bold:!!g('r_paid_by')},
+        {text:' hereby waives and releases its lien and right to claim a lien for labor, services, or materials furnished through', bold:false},
+        {text:' '+throughLong, bold:true},
         {text:', for the construction of improvements to the following described property owned by:', bold:false},
       ];
-      y = boldInline(doc, body1segs, margin, y, 14, lw); y+=6;
-      y=rolLine("PROPERTY:",g('r_property'),y); y+=8;
-      const body2=`This waiver and release does not cover any retention or labor, services, or materials furnished after the date specified above.\n\nThis document waives and releases lien rights only to the extent of the payment received. This document is conditional upon receipt of the payment described above. If the payment is not received or is dishonored, this document is void.`;
-      const b2=doc.splitTextToSize(body2,lw); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(0,0,0); doc.text(b2,margin,y); y+=b2.length*13+14;
-      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'RELEASE OF LIEN','',dateStr);
+      y = boldInline(doc, body1segs, margin, y, 15, lw); y+=10;
+      y=rolLine("PROPERTY:",g('r_property'),y);
+      y+=10;
+
+      // body2 — restored
+      const body2='This waiver and release does not cover any retention or labor, services, or materials furnished after the date specified above.\n\nThis document waives and releases lien rights only to the extent of the payment received. This document is conditional upon receipt of the payment described above. If the payment is not received or is dishonored, this document is void.';
+      const b2=doc.splitTextToSize(body2,lw);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
+      doc.text(b2,margin,y); y+=b2.length*13+10;
+
+      // ── SECTION 3: Signatures ────────────────────────────
+      y+=14;
       doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=14;
       doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
-      doc.text('Dated this ____ day of ____________, 20__.', margin, y); y+=28;
+      doc.text('Dated this ____ day of ____________, 20__.', margin, y); y+=30;
 
-      // WITNESS block (left) and BY block (right) — same top y
-      const sigY = y;
-      const bx = W/2+10;
-      const col1w = W/2-margin-20;
-      const col2w = W/2-margin-10;
-
-      // WITNESS label
+      const sigY=y, bx=W/2+10, col1w=W/2-margin-20, col2w=W/2-margin-10;
+      // WITNESS (left)
       doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(0,0,0);
       doc.text("WITNESS",margin,sigY);
-      // Signature line
       doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
-      doc.line(margin, sigY+18, margin+col1w, sigY+18);
-      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(0,0,0);
-      doc.text("Signature", margin, sigY+28);
-      // Print Name line
-      doc.line(margin, sigY+44, margin+col1w, sigY+44);
-      doc.text("Print Name", margin, sigY+54);
+      // Signature line + label below
+      doc.line(margin,sigY+20,margin+col1w,sigY+20);
+      doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(100,100,100);
+      doc.text("Signature",margin,sigY+28);
+      // Name line + label below
+      doc.line(margin,sigY+50,margin+col1w,sigY+50);
+      doc.text("Name",margin,sigY+58);
 
-      // BY label + company name inline
+      // BY (right)
       doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(0,0,0);
-      doc.text("BY:", bx, sigY);
-      const co = g('r_signer_company');
-      if(co){ doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text(co, bx+18, sigY); }
-      // Signature line
+      doc.text("BY:",bx,sigY);
+      const co=g('r_signer_company');
+      if(co){doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text(co,bx+18,sigY);}
       doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
-      doc.line(bx, sigY+18, bx+col2w, sigY+18);
-      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(0,0,0);
-      doc.text("Signature", bx, sigY+28);
-      // Print Name and Title on one line
-      doc.line(bx, sigY+44, bx+col2w, sigY+44);
-      doc.text("Print Name & Title", bx, sigY+54);
+      // Signature line + label below
+      doc.line(bx,sigY+20,bx+col2w,sigY+20);
+      doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(100,100,100);
+      doc.text("Signature",bx,sigY+28);
+      // Name & Title line + label below
+      doc.line(bx,sigY+50,bx+col2w,sigY+50);
+      doc.text("Name & Title",bx,sigY+58);
+      y=sigY+72;
 
-      y = sigY + 90;
-      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=20;
+      // ── SECTION 4: Notary ────────────────────────────────
+      y+=20;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=16;
       doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text("STATE OF FLORIDA",margin,y); y+=14;
       doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
       doc.text('COUNTY OF ____________________',margin,y); y+=14;
-      const rdEl=document.getElementById('r_dated_text');
-      const rdDay=rdEl?.dataset?.day||'____', rdMonth=rdEl?.dataset?.month||'____________', rdYear=rdEl?.dataset?.year||'__';
-      const notarytxt=`The foregoing instrument was acknowledged before me this ${rdDay} day of ${rdMonth}, 20${rdYear} by ${g('r_signer_name')||'________________________________'}.`;
-      const nl=doc.splitTextToSize(notarytxt,lw); doc.text(nl,margin,y); y+=nl.length*13+12;
-      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      const notarytxt='The foregoing instrument was acknowledged before me this ____ day of ____________, 20___ by ________________________________.';
+      const nl=doc.splitTextToSize(notarytxt,lw); doc.text(nl,margin,y); y+=nl.length*13+10;
       doc.text("[ ] Personally known   OR   [ ] Produced ID: ________________________________",margin,y); y+=22;
       doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
-      doc.line(margin,y+14,margin+200,y+14); doc.text("Notary Signature",margin,y+10); y+=28;
-      doc.line(margin,y+14,margin+200,y+14); doc.text("Print Name",margin,y+10); y+=28;
-      doc.line(margin,y+14,margin+200,y+14); doc.text("Commission No.",margin,y+10); y+=28;
-      doc.line(margin,y+14,margin+200,y+14); doc.text("My Commission Expires",margin,y+10);
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(margin,y,margin+220,y);
+      doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(100,100,100);
+      doc.text("Notary Signature",margin,y+8); y+=24;
+      doc.line(margin,y,margin+220,y);
+      doc.text("Print Name",margin,y+8); y+=24;
+      doc.line(margin,y,margin+220,y);
+      doc.text("Commission No.",margin,y+8); y+=24;
+      doc.line(margin,y,margin+220,y);
+      doc.text("My Commission Expires",margin,y+8);
       pdfFooter(doc,W,margin,blue,lightgray);
       fn='ReleaseOfLien_'+(g('r_project')||'Project').replace(/\s+/g,'_').slice(0,30)+'_'+dateStr.replace(/\//g,'-')+'.pdf';
     }
@@ -879,7 +1103,7 @@ async function genDoc(type) {
       const attnY = y+25+addrL.length*12+6;
       if(g('t_attn')){
         doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...blue); doc.text("ATTN",col1x,attnY);
-        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0); doc.text(g('t_attn'),col1x,attnY+11);
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0); if(g('t_attn')) doc.text(g('t_attn'),col1x,attnY+11);
       }
 
       // RIGHT: Project/Job
@@ -894,7 +1118,7 @@ async function genDoc(type) {
       doc.text("DATE",col2x,djY);
       doc.text("JOB NO.",col2x+80,djY);
       doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
-      doc.text(dateStr,col2x,djY+11);
+      if(dateStr) doc.text(dateStr,col2x,djY+11);
       doc.text(g('t_job_no')||'',col2x+80,djY+11);
 
       y = Math.max(attnY+22, djY+22);
@@ -1014,6 +1238,391 @@ async function genDoc(type) {
       fn='CheckRequest_'+(g('cr_to')||'Request').replace(/\s+/g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
     }
 
+        // ── SUBMITTAL ──
+    else if(type==='submittal'){
+      const dateStr=g('sb_date')?new Date(g('sb_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+
+      // Standard header but WITHOUT date (pass empty)
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'SUBMITTAL COVER SHEET','','');
+
+      const lw=W-margin*2;
+      const labelX=margin;
+      const valX=margin+90;
+      const rightCol=W/2+30;
+
+      function sbRow(label,val,ly){
+        doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text(label,labelX,ly);
+        doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        if(val) doc.text(val,valX,ly);
+      }
+
+      // ── TO + DATE ──────────────────────────────────────
+      sbRow("TO:",g('sb_to_name'),y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text("DATE:",rightCol,y);
+      doc.setFont("helvetica","bold"); doc.setTextColor(...blue);
+      doc.text(dateStr,rightCol+42,y); y+=13;
+      doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      if(g('sb_to_company')) doc.text(g('sb_to_company'),valX,y);
+      y+=22;
+
+      // ── FROM + SUBMITTAL NO ─────────────────────────────
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text("FROM:",labelX,y);
+      doc.setFont("helvetica","normal"); doc.text("TRINTEC CONSTRUCTION INC",valX,y);
+      doc.setFont("helvetica","bold"); doc.text("SUBMITTAL NO:",rightCol,y);
+      doc.setFont("helvetica","bold"); doc.setTextColor(...blue);
+      doc.text(g('sb_num')||'',rightCol+88,y); y+=12;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("7865 NW 66th Street",valX,y); y+=11;
+      doc.text("Miami, FL 33166",valX,y); y+=20;
+
+      // ── PROJECT ────────────────────────────────────────
+      sbRow("PROJECT:",g('sb_project'),y); y+=20;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=14;
+
+      // ── DESCRIPTION ────────────────────────────────────
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text("DESCRIPTION OF SUBMITTAL:",margin,y); y+=12;
+      if(g('sb_desc')){
+        const dl=doc.splitTextToSize(g('sb_desc'),lw);
+        doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(dl,margin,y);
+        y+=dl.length*12+8;
+      } else { y+=12; }
+
+      // ── MATERIAL ───────────────────────────────────────
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text("THIS SUBMITTAL COVERS THE FOLLOWING MATERIAL:",margin,y); y+=12;
+      if(g('sb_material')){
+        const ml=doc.splitTextToSize(g('sb_material'),lw);
+        doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(ml,margin,y);
+        y+=ml.length*12+10;
+      } else { y+=12; }
+
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4); doc.line(margin,y,W-margin,y); y+=14;
+
+      // ── STAMP / REVIEW STATUS ──────────────────────────
+      doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(0,0,0);
+      doc.text("Stamp / Review Status",margin,y); y+=12;
+
+      const selected=(document.querySelector('input[name="sb_status"]:checked')||{}).value||'Approved';
+      const stampW=220;
+      const bx=margin, bw=stampW;
+      const stampStartY=y;
+
+      // Logo: original Trintec (no 25 years), proportional
+      const STAMP_LOGO="https://raw.githubusercontent.com/Trintec-Construction/trintec-forms/main/Trintec_col_large.jpg";
+      const slogoW=bw-20, slogoH=Math.round(slogoW*0.5);
+      doc.addImage(STAMP_LOGO,"JPEG",bx+(bw-slogoW)/2,y+8,slogoW,slogoH);
+      let sy=y+slogoH+16;
+
+      // Underlined title
+      doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(0,0,0);
+      const titleTxt="SHOP DRAWING/ SUBMITTAL REVIEW";
+      doc.text(titleTxt,bx+bw/2,sy,{align:"center"});
+      const titleW2=doc.getTextWidth(titleTxt);
+      doc.setDrawColor(0,0,0); doc.setLineWidth(0.4);
+      doc.line(bx+bw/2-titleW2/2,sy+2,bx+bw/2+titleW2/2,sy+2);
+      sy+=14;
+
+      // Submittal #
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+      const sbNumVal=g('sb_num')||'';
+      const snLabel="Submittal #: ";
+      doc.text(snLabel,bx+bw/2-50,sy);
+      if(sbNumVal) doc.text(sbNumVal,bx+bw/2-50+doc.getTextWidth(snLabel),sy);
+      doc.setDrawColor(0,0,0); doc.setLineWidth(0.3);
+      doc.line(bx+bw/2-50+doc.getTextWidth(snLabel),sy+2,bx+bw-10,sy+2);
+      sy+=12;
+
+      // Disclaimer
+      doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(0,0,0);
+      const disc2="This submittal has been reviewed for general conformance with the requirements of the contract documents as specified. Review of dimensions will not serve to relieve the subcontractor of contractual responsibility for any deviation from the contract requirements.";
+      const discLines=doc.splitTextToSize(disc2,bw-16);
+      doc.text(discLines,bx+8,sy); sy+=discLines.length*8.5+10;
+
+      // Checkboxes — single column
+      const sbItems=[
+        {label:"APPROVED",key:"Approved"},
+        {label:"REVISE & RESUBMIT",key:"Revise & Resubmit"},
+        {label:"APPROVE WITH CHANGE NOTED",key:"Approve with Change Noted"},
+        {label:"REJECTED",key:"Rejected"},
+        {label:"REVIEWED & APPROVED",key:"Reviewed & Approved"},
+      ];
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+      sbItems.forEach(function(item){
+        const isChk=selected===item.key;
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.5);
+        doc.rect(bx+8,sy-6,8,8);
+        if(isChk){doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text("X",bx+9,sy);}
+        doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+        doc.text(item.label,bx+20,sy);
+        sy+=13;
+      });
+      sy+=4;
+
+      // By / Date / Comments
+      doc.setFontSize(8.5); doc.setFont("helvetica","normal"); doc.setTextColor(0,0,0);
+      const byV=g('sb_by')||'';
+      doc.text("By: "+byV,bx+8,sy);
+      doc.setDrawColor(0,0,0); doc.setLineWidth(0.3);
+      doc.line(bx+8+doc.getTextWidth("By: "+byV)+2,sy+2,bx+bw-8,sy+2); sy+=12;
+      doc.text("Date: ",bx+8,sy);
+      doc.line(bx+8+doc.getTextWidth("Date: ")+2,sy+2,bx+bw-8,sy+2); sy+=12;
+      const coV=g('sb_comments')||'';
+      doc.text("Comments: "+coV,bx+8,sy);
+      doc.line(bx+8+doc.getTextWidth("Comments: "+coV)+2,sy+2,bx+bw-8,sy+2); sy+=8;
+
+      // Draw border around whole stamp
+      doc.setDrawColor(0,0,0); doc.setLineWidth(0.8);
+      doc.rect(bx,stampStartY,bw,sy-stampStartY+4);
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='Submittal_'+(g('sb_project')||'Project').replace(/ /g,'_').slice(0,30)+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+        // ── PURCHASE ORDER ──
+    else if(type==='po'){
+      const dateStr=g('po_date')?new Date(g('po_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):new Date().toLocaleDateString('en-US');
+      const delivDateStr=g('po_delivery_date')?new Date(g('po_delivery_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}):'';
+      const poArgs=[W,margin,blue,gray,lightgray,'PURCHASE ORDER','',dateStr];
+      pdfHeader(doc,W,margin,blue,gray,lightgray,'PURCHASE ORDER','',dateStr);
+      const lw=W-margin*2;
+
+      // PO Number / Date / Project Number row
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text("PO NUMBER:",margin,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text(g('po_num')||'__________',margin+58,y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text("PROJECT NO:",W/2-10,y);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      const projNumTxt=g('po_proj_num')||'';
+      const projNumLines=doc.splitTextToSize(projNumTxt,W/2-10+65);
+      if(projNumTxt) doc.text(projNumLines,W/2+50,y);
+      y+=18;
+
+      // Two-column: Vendor Info (left) | Project Info (right)
+      doc.setDrawColor(...blue); doc.setLineWidth(1);
+      doc.line(margin,y,W-margin,y); y+=8;
+
+      const colMid=W/2-10;
+      const lcol=margin, rcol=W/2+10;
+      const lvalX=margin+50, rvalX=W/2+70;
+
+      // Section headers — no underlines
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text("VENDOR INFORMATION",lcol,y);
+      doc.text("PROJECT INFORMATION",rcol,y); y+=12;
+
+      function poField(label,val,lx,valx,ly,maxW){
+        doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+        doc.text(label,lx,ly);
+        doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+        if(val){
+          const lines=doc.splitTextToSize(String(val),maxW);
+          doc.text(lines,valx,ly);
+          return ly+lines.length*11;
+        }
+        return ly+11;
+      }
+
+      const fieldMaxL=colMid-lvalX-8;
+      const fieldMaxR=W-margin-rvalX-6;
+      let ly=y, ry=y;
+      ly=poField("Vendor:",g('po_vendor'),lcol,lvalX,ly,fieldMaxL);
+      ly=poField("Address:",g('po_vendor_addr'),lcol,lvalX,ly,fieldMaxL);
+      ly=poField("Contact:",g('po_vendor_contact'),lcol,lvalX,ly,fieldMaxL);
+      ly=poField("Phone:",g('po_vendor_phone'),lcol,lvalX,ly,fieldMaxL);
+      ly=poField("Email:",g('po_vendor_email'),lcol,lvalX,ly,fieldMaxL);
+
+      ry=poField("Project:",g('po_proj_name'),rcol,rvalX,ry,fieldMaxR);
+      ry=poField("Delivery Date:",delivDateStr,rcol,rvalX,ry,fieldMaxR);
+      ry=poField("Delivery Address:",g('po_delivery_loc'),rcol,rvalX,ry,fieldMaxR);
+
+      y=Math.max(ly,ry)+10;
+      doc.setDrawColor(...blue); doc.setLineWidth(1);
+      doc.line(margin,y,W-margin,y); y+=10;
+
+      // Scope Notes
+      if(g('po_scope_notes')){
+        doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+        doc.text("SCOPE NOTES:",margin,y); y+=11;
+        const sn=doc.splitTextToSize(g('po_scope_notes'),lw);
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.text(sn,margin,y); y+=sn.length*11+8;
+        doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=8;
+      }
+
+      // Line items table
+      const subtotal=poLines.reduce((s,l)=>s+(l.total||0),0);
+      const taxExempt=document.getElementById('po_tax_exempt')?.checked;
+      const taxPct=taxExempt?0:(parseFloat(document.getElementById('po_tax_pct')?.value)||0);
+      const taxVal=subtotal*(taxPct/100);
+      const totalPO=subtotal+taxVal;
+
+      const tBody=poLines.filter(l=>l.desc||l.qty||l.unitCost).map((l,i)=>[
+        String(i+1), l.desc,
+        l.qty||'', l.unit||'',
+        l.unitCost?'$'+fmt(parseFloat(l.unitCost)||0):'',
+        l.total?'$'+fmt(l.total):''
+      ]);
+      if(tBody.length===0) for(let i=0;i<5;i++) tBody.push([String(i+1),'','','','','']);
+      while(tBody.length<5) tBody.push([String(tBody.length+1),'','','','','']);
+
+      y=pagedTable(doc,{
+        startY:y,
+        head:[['#','DESCRIPTION','QTY','UNIT','UNIT COST','TOTAL COST']],
+        body:tBody,
+        styles:{font:"helvetica",fontSize:9,cellPadding:6,textColor:[0,0,0],fillColor:[255,255,255]},
+        headStyles:{fillColor:[26,58,92],textColor:[255,255,255],fontStyle:"bold",fontSize:8},
+        alternateRowStyles:{fillColor:[255,255,255]},
+        columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:'auto'},2:{cellWidth:28,halign:'center'},3:{cellWidth:28,halign:'center'},4:{cellWidth:58,halign:'right'},5:{cellWidth:58,halign:'right'}},
+        tableLineColor:[200,210,220],tableLineWidth:0.3
+      },W,margin,...poArgs.slice(2)); y+=8;
+
+      // Totals
+      y=checkPage(doc,y,...poArgs,50);
+      const totX=W-margin-180;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(totX,y,W-margin,y); y+=10;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("Subtotal",totX,y);
+      doc.text('$'+fmt(subtotal),W-margin,y,{align:"right"}); y+=12;
+      const taxLabel=taxExempt?"Tax (Exempt)":(taxPct>0?"Tax ("+taxPct+"%)":"Tax");
+      doc.text(taxLabel,totX,y);
+      doc.text(taxExempt?"$0.00":'$'+fmt(taxVal),W-margin,y,{align:"right"}); y+=12;
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...blue);
+      doc.text("TOTAL PO AMOUNT",totX,y);
+      doc.text('$'+fmt(totalPO),W-margin,y,{align:"right"}); y+=16;
+      doc.setDrawColor(...blue); doc.setLineWidth(1); doc.line(totX,y,W-margin,y); y+=14;
+
+      y+=6;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=10;
+
+      // Terms & Conditions — from editable textarea
+      const terms=(document.querySelector('input[name="po_terms"]:checked')||{}).value||'Net 30';
+      y=checkPage(doc,y,...poArgs,60);
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text("TERMS & CONDITIONS",margin,y); y+=11;
+      const tcText=(document.getElementById('po_tc')?.value||'').replace('[see above]',terms);
+      const tcLines=doc.splitTextToSize(tcText,lw);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+      doc.text(tcLines,margin,y); y+=tcLines.length*10+8;
+
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=12;
+
+      // Signatures - two columns
+      y=checkPage(doc,y,...poArgs,80);
+      const sc1=margin, sc2=W/2+10;
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text("APPROVED BY — TRINTEC CONSTRUCTION INC.",sc1,y);
+      doc.text("VENDOR ACCEPTANCE",sc2,y); y+=14;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("Petulia Schvartz",sc1,y); y+=10;
+      doc.text("President",sc1,y); y+=18;
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3);
+      doc.line(sc1,y,sc1+200,y); doc.line(sc2,y,sc2+200,y);
+      doc.setFontSize(7.5); doc.setTextColor(100,100,100);
+      doc.text("Signature",sc1,y+8); doc.text("Authorized Signature",sc2,y+8); y+=22;
+      doc.line(sc1,y,sc1+200,y); doc.line(sc2,y,sc2+200,y);
+      doc.text("Date",sc1,y+8); doc.text("Name",sc2,y+8); y+=22;
+      doc.line(sc2,y,sc2+200,y);
+      doc.text("Title",sc2,y+8); y+=22;
+      doc.line(sc2,y,sc2+200,y);
+      doc.text("Date",sc2,y+8);
+
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='PurchaseOrder_'+(g('po_num')||'PO').replace(/ /g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
+    }
+
+        // ── LETTER ──
+    else if(type==='letter'){
+      const dateStr=g('lt_date')?new Date(g('lt_date')+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      const ltArgs=[W,margin,blue,gray,lightgray,'','',''];
+
+      // Standard header but clean — no doc type on right, no date
+      doc.addImage(logoImg(doc),"JPEG",margin,22,64,62);
+      let cx=margin+72;
+      doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(...blue);
+      doc.text("TRINTEC CONSTRUCTION INC",cx,42);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...gray);
+      doc.text("7865 NW 66th Street, Miami, FL 33166",cx,54);
+      doc.setTextColor(...blue);
+      doc.textWithLink("305.685.3001",cx,66,{url:"tel:+13056853001"});
+      doc.setTextColor(...gray); doc.text("  ·  fax 305.401.3010",cx+38,66);
+      doc.setTextColor(...blue);
+      doc.textWithLink("pschvartz@trintecinc.com",cx,78,{url:"mailto:pschvartz@trintecinc.com"});
+      doc.setDrawColor(...blue); doc.setLineWidth(2);
+      doc.line(margin,96,W-margin,96);
+
+      const lw=W-margin*2;
+      y=116;
+
+      // Date — right aligned
+      doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text(dateStr,W-margin,y,{align:"right"}); y+=20;
+
+      // TO block
+      if(g('lt_to_name')||g('lt_to_company')||g('lt_to_addr')){
+        if(g('lt_to_name')){ doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(g('lt_to_name'),margin,y); y+=13; }
+        if(g('lt_to_company')){ doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(g('lt_to_company'),margin,y); y+=13; }
+        if(g('lt_to_addr')){
+          const addrL=doc.splitTextToSize(g('lt_to_addr'),lw/2);
+          doc.text(addrL,margin,y); y+=addrL.length*13;
+        }
+        y+=8;
+      }
+
+      // RE / Subject
+      if(g('lt_ref')){
+        doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text("RE: ",margin,y);
+        doc.setFont("helvetica","normal"); doc.text(g('lt_ref'),margin+doc.getTextWidth("RE: "),y);
+        y+=18;
+      }
+
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.3); doc.line(margin,y,W-margin,y); y+=16;
+
+      // Salutation
+      if(g('lt_salutation')){
+        doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(0,0,0);
+        doc.text(g('lt_salutation'),margin,y); y+=18;
+      }
+
+      // Body
+      if(g('lt_body')){
+        doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(0,0,0);
+        const paragraphs=g('lt_body').split('\n');
+        paragraphs.forEach(para=>{
+          if(para.trim()===''){
+            y+=8;
+          } else {
+            y=checkPage(doc,y,W,margin,blue,gray,lightgray,'','','',20);
+            const lines=doc.splitTextToSize(para,lw);
+            doc.text(lines,margin,y);
+            y+=lines.length*14+4;
+          }
+        });
+        y+=10;
+      }
+
+      // Closing
+      y=checkPage(doc,y,W,margin,blue,gray,lightgray,'','','',80);
+      const closing=g('lt_closing')||'Sincerely,';
+      doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(0,0,0);
+      doc.text(closing,margin,y); y+=40;
+      // Signature line
+      doc.setDrawColor(...lightgray); doc.setLineWidth(0.4);
+      doc.line(margin,y,margin+200,y); y+=12;
+      if(g('lt_sender_name')){ doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text(g('lt_sender_name'),margin,y); y+=13; }
+      if(g('lt_sender_title')){ doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(...gray); doc.text(g('lt_sender_title'),margin,y); y+=13; }
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray);
+      doc.text("Trintec Construction Inc.",margin,y);
+
+      pdfFooter(doc,W,margin,blue,lightgray);
+      fn='Letter_'+(g('lt_to_name')||'Letter').replace(/ /g,'_')+'_'+new Date(g('lt_date')+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'-')+'.pdf';
+    }
+
         doc.save(fn);
     statEl.className='status-msg ok';
     statEl.textContent='✓ '+fn+' downloaded successfully.';
@@ -1023,7 +1632,7 @@ async function genDoc(type) {
     console.error(e);
   }
   document.getElementById(btnId).closest('button').disabled=false;
-  document.getElementById(btnId).textContent={proposal:'⬇ Generate Proposal PDF',estimate:'⬇ Generate Estimate PDF',rol:'⬇ Generate Release of Lien PDF',transmittal:'⬇ Generate Transmittal Letter PDF',checkrequest:'⬇ Generate Check Request PDF'}[type];
+  document.getElementById(btnId).textContent={proposal:'⬇ Generate Proposal PDF',estimate:'⬇ Generate Estimate PDF',rol:'⬇ Generate Release of Lien PDF',transmittal:'⬇ Generate Transmittal Letter PDF',checkrequest:'⬇ Generate Check Request PDF',submittal:'⬇ Generate Submittal Cover Sheet PDF',po:'⬇ Generate Purchase Order PDF',letter:'⬇ Generate Letter PDF'}[type];
 }
 
 // ── Check Request amount to words ────────────────────────
@@ -1095,6 +1704,8 @@ function buildPayTerms() {
 // Init
 document.querySelectorAll('input[type=date]').forEach(el=>el.value=new Date().toISOString().slice(0,10));
 addLine('p'); addLine('e'); addTLine(); addCRLine(); renderCRLines();
+for(let i=0;i<5;i++) addPOLine();
+
 </script>
 </body>
 </html>
