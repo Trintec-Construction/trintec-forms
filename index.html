@@ -789,6 +789,25 @@ function pdfHeader(doc, W, margin, blue, gray, lightgray, docLabel, docNum, date
   doc.line(margin,96,W-margin,96);
 }
 
+function pdfFooterEstimate(doc, W, margin, blue, lightgray){
+  const totalPages = doc.internal.getNumberOfPages();
+  for(let p=1; p<=totalPages; p++){
+    doc.setPage(p);
+    const pageH=doc.internal.pageSize.getHeight();
+    // THANK YOU line above footer
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...blue);
+    doc.text("THANK YOU FOR YOUR BUSINESS!",W/2,pageH-42,{align:"center"});
+    // Footer line
+    doc.setDrawColor(...blue); doc.setLineWidth(1.5);
+    doc.line(margin,pageH-28,W-margin,pageH-28);
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...lightgray);
+    doc.text("Trintec Construction Inc.  ·  7865 NW 66th Street, Miami, FL 33166  ·  305.685.3001  ·  pschvartz@trintecinc.com",W/2,pageH-16,{align:"center"});
+    if(totalPages>1){
+      doc.text("Page "+p+" of "+totalPages, W-margin, pageH-16, {align:"right"});
+    }
+  }
+}
+
 function pdfFooter(doc, W, margin, blue, lightgray){
   const totalPages = doc.internal.getNumberOfPages();
   for(let p=1; p<=totalPages; p++){
@@ -989,12 +1008,8 @@ async function genDoc(type) {
       doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.setTextColor(...blue);
       doc.text("TOTAL",W-margin-180,y);
       doc.text('$'+fmt(eGrandTotal),W-margin,y,{align:"right"}); y+=22;
-      if(g('e_pay')){ y=writeBlock(doc,g('e_pay'),8.5,false,gray,margin,W-margin*2,y,12,...eArgs); y+=14; }
-      // Thank you
-      y=checkPage(doc,y,...eArgs,40);
-      y+=10; doc.setDrawColor(...blue); doc.setLineWidth(1.5); doc.line(margin,y,W-margin,y); y+=16;
-      doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...blue); doc.text("THANK YOU FOR YOUR BUSINESS!",W/2,y,{align:"center"});
-      pdfFooter(doc,W,margin,blue,lightgray);
+      if(g('e_pay')){ y=writeBlock(doc,g('e_pay'),8.5,false,gray,margin,W-margin*2,y,12,...eArgs); y+=8; }
+      pdfFooterEstimate(doc,W,margin,blue,lightgray);
       fn='Estimate_'+(g('e_cc')||g('e_cn')||'Client').replace(/\s+/g,'_')+'_'+dateStr.replace(/\//g,'-')+'.pdf';
     }
 
